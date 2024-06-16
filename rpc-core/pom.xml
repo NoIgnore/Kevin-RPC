@@ -63,6 +63,18 @@
             <artifactId>jboss-marshalling-serial</artifactId>
             <version>${jboss-marshalling-serial.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.kevin.rpc</groupId>
+            <artifactId>rpc-interface</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.32</version>
+            <scope>provided</scope>
+        </dependency>
 
     </dependencies>
 </project>
