@@ -1,19 +1,18 @@
 package com.kevin.rpc.common.config;
 
+import lombok.Data;
+
 /**
  * @Author: HHJ
  * @Package: com.kevin.rpc.common.config
  * @Project: Kevin-RPC
  **/
+@Data
 public class ServerConfig {
 
     private Integer port;
 
-    public Integer getPort() {
-        return port;
-    }
+    private String registerAddr;
 
-    public void setPort(Integer port) {
-        this.port = port;
-    }
+    private String applicationName;
 }
