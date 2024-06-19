@@ -2,15 +2,15 @@ package com.kevin.rpc.client;
 
 import com.kevin.rpc.common.ChannelFutureWrapper;
 import com.kevin.rpc.common.utils.CommonUtil;
+import com.kevin.rpc.router.Selector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
-import static com.kevin.rpc.common.cache.CommonClientCache.CONNECT_MAP;
-import static com.kevin.rpc.common.cache.CommonClientCache.SERVER_ADDRESS;
+import static com.kevin.rpc.common.cache.CommonClientCache.*;
 
 public class ConnectionHandler {
 
@@ -18,11 +18,8 @@ public class ConnectionHandler {
      * 核心的连接处理器
      * 专门用于负责和服务端构建连接通信
      */
+    @Setter
     private static Bootstrap bootstrap;
-
-    public static void setBootstrap(Bootstrap bootstrap) {
-        ConnectionHandler.bootstrap = bootstrap;
-    }
 
     /**
      * 构建单个连接通道 元操作，既要处理连接，还要统一将连接进行内存存储管理
@@ -44,14 +41,21 @@ public class ConnectionHandler {
         int port = Integer.parseInt(providerAddress[1]);
         //到底这个channelFuture里面是什么
         ChannelFuture channelFuture = bootstrap.connect(ip, port).sync();
+        String providerUrlInfo = URL_MAP.get(providerServiceName).get(providerIp);
+        System.out.println("providerUrlInfo:" + providerUrlInfo);
         ChannelFutureWrapper channelFutureWrapper = new ChannelFutureWrapper();
         channelFutureWrapper.setChannelFuture(channelFuture);
         channelFutureWrapper.setHost(ip);
         channelFutureWrapper.setPort(port);
+        channelFutureWrapper.setWeight(Integer.valueOf(providerUrlInfo.substring(providerUrlInfo.lastIndexOf(";") + 1)));
         SERVER_ADDRESS.add(providerIp);
         List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.getOrDefault(providerServiceName, new ArrayList<>());
         channelFutureWrappers.add(channelFutureWrapper);
+        //key是服务的名字，value是对应的channel通道的List集合
         CONNECT_MAP.put(providerServiceName, channelFutureWrappers);
+        Selector selector = new Selector();
+        selector.setProviderServiceName(providerServiceName);
+        ROUTER.refreshRouterArr(selector);
     }
 
     /**
@@ -92,7 +96,9 @@ public class ConnectionHandler {
         if (CommonUtil.isEmptyList(channelFutureWrappers)) {
             throw new RuntimeException("no provider exist for " + providerServiceName);
         }
-        return channelFutureWrappers.get(new Random().nextInt(channelFutureWrappers.size())).getChannelFuture();
+        Selector selector = new Selector();
+        selector.setProviderServiceName(providerServiceName);
+        return ROUTER.select(selector).getChannelFuture();
     }
 
 

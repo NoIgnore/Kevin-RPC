@@ -3,8 +3,8 @@ package com.kevin.rpc.server;
 import com.kevin.rpc.common.RpcDecoder;
 import com.kevin.rpc.common.RpcEncoder;
 import com.kevin.rpc.common.config.ServerConfig;
+import com.kevin.rpc.common.event.RpcListenerLoader;
 import com.kevin.rpc.common.utils.CommonUtil;
-import com.kevin.rpc.registy.RegistryService;
 import com.kevin.rpc.registy.URL;
 import com.kevin.rpc.registy.zookeeper.ZookeeperRegister;
 import com.kevin.rpc.server.impl.DataServiceImpl;
@@ -17,8 +17,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.Getter;
 import lombok.Setter;
 
-import static com.kevin.rpc.common.cache.CommonServerCache.PROVIDER_CLASS_MAP;
-import static com.kevin.rpc.common.cache.CommonServerCache.PROVIDER_URL_SET;
+import static com.kevin.rpc.common.cache.CommonServerCache.*;
 
 /**
  * @Author: HHJ
@@ -30,8 +29,6 @@ public class Server {
     @Getter
     @Setter
     private ServerConfig serverConfig;
-
-    private RegistryService registryService;
 
     public void startServerApplication() throws InterruptedException {
         NioEventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -80,7 +77,7 @@ public class Server {
                     e.printStackTrace();
                 }
                 for (URL url : PROVIDER_URL_SET) {
-                    registryService.register(url);
+                    REGISTRY_SERVICE.register(url);
                 }
             }
         });
@@ -95,8 +92,8 @@ public class Server {
         if (classes.length > 1) {
             throw new RuntimeException("service must only had one interfaces!");
         }
-        if (registryService == null) {
-            registryService = new ZookeeperRegister(serverConfig.getRegisterAddr());
+        if (REGISTRY_SERVICE == null) {
+            REGISTRY_SERVICE = new ZookeeperRegister(serverConfig.getRegisterAddr());
         }
         //默认选择该对象的第一个实现接口
         Class<?> interfaceClass = classes[0];
@@ -111,9 +108,16 @@ public class Server {
 
     public static void main(String[] args) throws InterruptedException {
         Server server = new Server();
+        //初始化配置
         server.initServerConfig();
+        //初始化监听器
+        RpcListenerLoader rpcListenerLoader = new RpcListenerLoader();
+        rpcListenerLoader.init();
+        //注册服务
         server.registyService(new DataServiceImpl());
+        //设置回调
+        ServerShutdownHook.registryShutdownHook();
+        //启动服务
         server.startServerApplication();
     }
-
 }

@@ -14,6 +14,8 @@ import com.kevin.rpc.proxy.jdk.JDKProxyFactory;
 import com.kevin.rpc.registy.AbstractRegister;
 import com.kevin.rpc.registy.URL;
 import com.kevin.rpc.registy.zookeeper.ZookeeperRegister;
+import com.kevin.rpc.router.RandomRouterImpl;
+import com.kevin.rpc.router.RotateRouterImpl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -24,9 +26,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Map;
 
-import static com.kevin.rpc.common.cache.CommonClientCache.SEND_QUEUE;
-import static com.kevin.rpc.common.cache.CommonClientCache.SUBSCRIBE_SERVICE_LIST;
+import static com.kevin.rpc.common.cache.CommonClientCache.*;
+import static com.kevin.rpc.common.constants.RpcConstants.*;
 
 /**
  * @Author: HHJ
@@ -69,7 +72,7 @@ public class Client {
 
         //初始化代理工厂
         RpcReference rpcReference;
-        if ("javassist".equals(clientConfig.getProxyType())) {
+        if (JAVASSIST_PROXY_TYPE.equals(clientConfig.getProxyType())) {
             rpcReference = new RpcReference(new JavassistProxyFactory());
         } else {
             rpcReference = new RpcReference(new JDKProxyFactory());
@@ -83,9 +86,18 @@ public class Client {
         clientConfig.setRegisterAddr("localhost:2181");
         clientConfig.setApplicationName("kevin-rpc-client");
         clientConfig.setProxyType("JDK");
+        clientConfig.setRouterStrategy("random");
         this.setClientConfig(clientConfig);
     }
 
+    private void initClientRouterStrategy() {
+        String routerStrategy = clientConfig.getRouterStrategy();// "random"
+        if (RANDOM_ROUTER_TYPE.equals(routerStrategy)) {
+            ROUTER = new RandomRouterImpl();
+        } else if (ROTATE_ROUTER_TYPE.equals(routerStrategy)) {
+            ROUTER = new RotateRouterImpl();
+        }
+    }
 
     /**
      * 启动服务之前需要预先订阅对应的dubbo服务
@@ -98,6 +110,8 @@ public class Client {
         url.setApplicationName(clientConfig.getApplicationName());
         url.setServiceName(serviceBean.getName());
         url.addParameter("host", CommonUtil.getIpAddress());
+        Map<String, String> result = abstractRegister.getServiceWeightMap(serviceBean.getName());
+        URL_MAP.put(serviceBean.getName(), result);
         abstractRegister.subscribe(url);
     }
 
@@ -105,17 +119,22 @@ public class Client {
      * 开始和各个provider建立连接
      */
     public void doConnectServer() {
-        for (String providerServiceName : SUBSCRIBE_SERVICE_LIST) {
-            List<String> providerIps = abstractRegister.getProviderIps(providerServiceName);
+        // url.setApplicationName(clientConfig.getApplicationName());
+        // url.setServiceName(serviceBean.getName());
+        // url.addParameter("host", CommonUtil.getIpAddress());
+        // clientSubscribeUrl为上面添加的内容
+        for (URL clientSubscribeUrl : SUBSCRIBE_SERVICE_LIST) {
+            List<String> providerIps = abstractRegister.getProviderIps(clientSubscribeUrl.getServiceName());
             for (String providerIp : providerIps) {
                 try {
-                    ConnectionHandler.connect(providerServiceName, providerIp);
+                    ConnectionHandler.connect(clientSubscribeUrl.getServiceName(), providerIp);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
             URL url = new URL();
-            url.setServiceName(providerServiceName);
+            url.setServiceName(clientSubscribeUrl.getServiceName());
+            url.addParameter("providerIps", JSON.toJSONString(providerIps));
             //客户端在此新增一个订阅的功能
             abstractRegister.doAfterSubscribe(url);
         }
@@ -125,7 +144,7 @@ public class Client {
      * 开启发送线程，专门从事将数据包发送给服务端
      */
     private void startClient() {
-        Thread asyncSendJob = new Thread(new AsyncSendJob());
+        Thread asyncSendJob = new Thread(new AsyncSendJob(), "ClientAsyncSendJobThread");
         asyncSendJob.start();
     }
 
@@ -158,15 +177,20 @@ public class Client {
     }
 
     public static void main(String[] args) throws Throwable {
-        //初始化客户端
+
         Client client = new Client();
+        //初始化配置文件
         client.initClientConfig();
+        //初始化路由策略
+        client.initClientRouterStrategy();
+        //初始化客户端
         RpcReference rpcReference = client.initClientApplication();
 
         //订阅服务
         client.doSubscribeService(DataService.class);
         //建立连接
         client.doConnectServer();
+        //启动客户端
         client.startClient();
         System.out.println("========== Client start success ==========");
 

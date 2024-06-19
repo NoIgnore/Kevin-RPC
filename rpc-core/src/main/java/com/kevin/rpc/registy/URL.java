@@ -1,6 +1,6 @@
 package com.kevin.rpc.registy;
 
-import com.kevin.rpc.registy.zookeeper.ProviderNodeInfo;
+import com.kevin.rpc.common.event.data.ProviderNodeInfo;
 import lombok.Data;
 
 import java.nio.charset.StandardCharsets;
@@ -45,7 +45,8 @@ public class URL {
 
     /**
      * 将URL转换为写入zk的provider节点下的一段字符串
-     * kevin-rpc-server;com.kevin.rpc.interfaces.DataService;192.168.9.9:9999;System.currentTimeMillis()).getBytes()
+     * kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100
+     * 这里的100是权重值
      *
      * @param url
      * @return
@@ -53,12 +54,12 @@ public class URL {
     public static String buildProviderUrlStr(URL url) {
         String host = url.getParameters().get("host");
         String port = url.getParameters().get("port");
-        return new String((url.getApplicationName() + ";" + url.getServiceName() + ";" + host + ":" + port + ";" + System.currentTimeMillis()).getBytes(), StandardCharsets.UTF_8);
+        return new String((url.getApplicationName() + ";" + url.getServiceName() + ";" + host + ":" + port + ";" + System.currentTimeMillis() + ";100").getBytes(), StandardCharsets.UTF_8);
     }
 
     /**
      * 将URL转换为写入zk的consumer节点下的一段字符串
-     * kevin-rpc-client;com.kevin.rpc.interfaces.DataService;192.168.9.9;System.currentTimeMillis()).getBytes()
+     * kevin-rpc-client;com.kevin.rpc.interfaces.DataService;客户端IP;当前时间
      *
      * @param url
      * @return
@@ -71,7 +72,7 @@ public class URL {
 
     /**
      * 将某个节点下的信息转换为一个Provider节点对象
-     * 入参格式例如：/kevin-rpc/com.kevin.interfaces.DataService/provider/192.168.43.227:9092
+     * 实际入参: kevin-rpc-server/com.kevin.rpc.interfaces.DataService/服务端IP:服务端端口/当前时间/100(权重)
      *
      * @param providerNodeStr
      * @return
@@ -79,8 +80,9 @@ public class URL {
     public static ProviderNodeInfo buildUrlFromUrlStr(String providerNodeStr) {
         String[] items = providerNodeStr.split("/");
         ProviderNodeInfo providerNodeInfo = new ProviderNodeInfo();
-        providerNodeInfo.setServiceName(items[2]);
-        providerNodeInfo.setAddress(items[4]);
+        providerNodeInfo.setServiceName(items[1]);//com.kevin.rpc.interfaces.DataService
+        providerNodeInfo.setAddress(items[2]);//服务端IP:服务端端口
+        providerNodeInfo.setWeight(Integer.valueOf(items[4]));//100(权重)
         return providerNodeInfo;
     }
 

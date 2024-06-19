@@ -6,6 +6,8 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 
 import java.util.List;
 
+import static com.kevin.rpc.common.constants.RpcConstants.MAGIC_NUMBER;
+
 /**
  * @Author: HHJ
  * @Package: com.kevin.rpc.common
@@ -18,7 +20,7 @@ public class RpcDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> out) throws Exception {
         if (byteBuf.readableBytes() >= BASE_LENGTH) {
-            if (byteBuf.readableBytes() > 1000) {
+            if (byteBuf.readableBytes() > MAGIC_NUMBER) {
                 byteBuf.skipBytes(byteBuf.readableBytes());
             }
 

@@ -5,6 +5,8 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import static com.kevin.rpc.common.constants.RpcConstants.MAGIC_NUMBER;
+
 @Data
 public class RpcProtocol implements Serializable {
 
@@ -13,7 +15,7 @@ public class RpcProtocol implements Serializable {
     /**
      * 魔法数,在做服务通讯的时候定义的一个安全检测，确认当前请求的协议是否合法。
      */
-    private short magicNumber = 123;
+    private short magicNumber = MAGIC_NUMBER;
     /**
      * 协议传输核心数据的长度
      */
