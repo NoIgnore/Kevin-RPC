@@ -5,6 +5,7 @@ import com.kevin.rpc.common.ChannelFutureWrapper;
 import com.kevin.rpc.common.RpcInvocation;
 import com.kevin.rpc.registy.URL;
 import com.kevin.rpc.router.Router;
+import com.kevin.rpc.serialize.SerializeFactory;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -40,6 +41,9 @@ public class CommonClientCache {
     public static Map<String, ChannelFutureWrapper[]> SERVICE_ROUTER_MAP = new ConcurrentHashMap<>();
     public static ChannelFuturePollingRef CHANNEL_FUTURE_POLLING_REF = new ChannelFuturePollingRef();
 
+    //路由组件
     public static Router ROUTER;
+    //客户端序列化工厂
+    public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
 
 }

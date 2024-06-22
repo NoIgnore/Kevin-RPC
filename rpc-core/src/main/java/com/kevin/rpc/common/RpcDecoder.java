@@ -18,7 +18,7 @@ public class RpcDecoder extends ByteToMessageDecoder {
     public final int BASE_LENGTH = 2 + 4;
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> out) {
         if (byteBuf.readableBytes() >= BASE_LENGTH) {
             if (byteBuf.readableBytes() > MAGIC_NUMBER) {
                 byteBuf.skipBytes(byteBuf.readableBytes());

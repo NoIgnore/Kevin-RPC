@@ -3,6 +3,7 @@ package com.kevin.rpc.common.cache;
 
 import com.kevin.rpc.registy.RegistryService;
 import com.kevin.rpc.registy.URL;
+import com.kevin.rpc.serialize.SerializeFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,4 +29,9 @@ public class CommonServerCache {
      * 注册中心：用于服务端 服务的注册url和下线
      */
     public static RegistryService REGISTRY_SERVICE;
+
+    /**
+     * 服务端序列化工厂
+     */
+    public static SerializeFactory SERVER_SERIALIZE_FACTORY;
 }

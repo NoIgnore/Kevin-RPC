@@ -15,4 +15,9 @@ public class ServerConfig {
     private String registerAddr;
 
     private String applicationName;
+
+    /**
+     * 服务端序列化方式 example: hessian2,kryo,jdk,fastjson
+     */
+    private String serverSerialize;
 }

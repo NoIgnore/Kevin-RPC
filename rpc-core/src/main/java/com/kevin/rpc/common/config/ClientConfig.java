@@ -15,6 +15,11 @@ public class ClientConfig {
     private String applicationName;
 
     /**
+     * 客户端序列化方式 example: hessian2,kryo,jdk,fastjson
+     */
+    private String clientSerialize;
+
+    /**
      * 代理类型 example: jdk,javassist
      */
     private String proxyType;

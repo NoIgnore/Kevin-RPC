@@ -2,6 +2,7 @@ package com.kevin.rpc.common;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -10,7 +11,10 @@ import java.util.Arrays;
  * @Project: Kevin-RPC
  **/
 @Data
-public class RpcInvocation {
+public class RpcInvocation implements Serializable {
+
+    private static final long serialVersionUID = 2951293262547830249L;
+
     /**
      * 请求的目标方法, 例如sendData
      */

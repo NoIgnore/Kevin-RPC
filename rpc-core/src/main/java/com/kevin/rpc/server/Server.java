@@ -7,6 +7,10 @@ import com.kevin.rpc.common.event.RpcListenerLoader;
 import com.kevin.rpc.common.utils.CommonUtil;
 import com.kevin.rpc.registy.URL;
 import com.kevin.rpc.registy.zookeeper.ZookeeperRegister;
+import com.kevin.rpc.serialize.FastJsonSerializeFactory;
+import com.kevin.rpc.serialize.HessianSerializeFactory;
+import com.kevin.rpc.serialize.JdkSerializeFactory;
+import com.kevin.rpc.serialize.KryoSerializeFactory;
 import com.kevin.rpc.server.impl.DataServiceImpl;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -14,20 +18,19 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import static com.kevin.rpc.common.cache.CommonServerCache.*;
+import static com.kevin.rpc.common.constants.RpcConstants.*;
 
 /**
  * @Author: HHJ
  * @Package: com.kevin.rpc.server
  * @Project: Kevin-RPC
  **/
+@Data
 public class Server {
 
-    @Getter
-    @Setter
     private ServerConfig serverConfig;
 
     public void startServerApplication() throws InterruptedException {
@@ -44,12 +47,31 @@ public class Server {
 
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
-            protected void initChannel(SocketChannel ch) throws Exception {
+            protected void initChannel(SocketChannel ch) {
                 ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new RpcDecoder());
                 ch.pipeline().addLast(new ServerHandler());
             }
         });
+
+        //初始化序列化器
+        String serverSerialize = serverConfig.getServerSerialize();
+        switch (serverSerialize) {
+            case JDK_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
+                break;
+            case FAST_JSON_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
+                break;
+            case HESSIAN2_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new HessianSerializeFactory();
+                break;
+            case KRYO_SERIALIZE_TYPE:
+                SERVER_SERIALIZE_FACTORY = new KryoSerializeFactory();
+                break;
+            default:
+                throw new RuntimeException("no match serialize type for...." + serverSerialize);
+        }
 
         this.batchExportUrl();
         bootstrap.bind(serverConfig.getPort()).sync();
@@ -61,6 +83,7 @@ public class Server {
         serverConfig.setPort(8010);
         serverConfig.setRegisterAddr("localhost:2181");
         serverConfig.setApplicationName("kevin-rpc-server");
+        serverConfig.setServerSerialize("kryo");
         this.setServerConfig(serverConfig);
     }
 
@@ -68,23 +91,20 @@ public class Server {
      * 将服务端的具体服务都暴露到注册中心
      */
     public void batchExportUrl() {
-        Thread task = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                for (URL url : PROVIDER_URL_SET) {
-                    REGISTRY_SERVICE.register(url);
-                }
+        Thread task = new Thread(() -> {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            for (URL url : PROVIDER_URL_SET) {
+                REGISTRY_SERVICE.register(url);
             }
         });
         task.start();
     }
 
-    public void registyService(Object serviceBean) {
+    public void registryService(Object serviceBean) {
         if (serviceBean.getClass().getInterfaces().length == 0) {
             throw new RuntimeException("service must had interfaces!");
         }
@@ -114,7 +134,7 @@ public class Server {
         RpcListenerLoader rpcListenerLoader = new RpcListenerLoader();
         rpcListenerLoader.init();
         //注册服务
-        server.registyService(new DataServiceImpl());
+        server.registryService(new DataServiceImpl());
         //设置回调
         ServerShutdownHook.registryShutdownHook();
         //启动服务
