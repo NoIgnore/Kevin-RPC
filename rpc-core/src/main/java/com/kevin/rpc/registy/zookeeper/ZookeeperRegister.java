@@ -151,7 +151,7 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
             String nodeData = zkClient.getNodeData(path);
             //kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100
             //变成-> kevin-rpc-server/com.kevin.rpc.interfaces.DataService/服务端IP:服务端端口/当前时间/100
-            nodeData = nodeData.replace(";", "/");
+            //nodeData = nodeData.replace(";", "/");
             ProviderNodeInfo providerNodeInfo = URL.buildUrlFromUrlStr(nodeData);
             RpcEvent rpcEvent = new RpcNodeUpdateEvent(providerNodeInfo);
             RpcListenerLoader.sendEvent(rpcEvent);

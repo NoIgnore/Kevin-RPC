@@ -5,17 +5,24 @@ import lombok.Data;
 @Data
 public class ProviderNodeInfo {
 
+    private String applicationName;
+
     private String serviceName;
 
     private String address;
 
     private Integer weight;
 
+    private String group;
+
     @Override
     public String toString() {
         return "ProviderNodeInfo{" +
-                "serviceName='" + serviceName + '\'' +
+                "applicationName='" + applicationName + '\'' +
+                ", serviceName='" + serviceName + '\'' +
                 ", address='" + address + '\'' +
+                ", weight=" + weight +
+                ", group='" + group + '\'' +
                 '}';
     }
 }

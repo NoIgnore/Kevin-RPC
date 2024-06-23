@@ -3,6 +3,8 @@ package com.kevin.rpc.common.cache;
 import com.kevin.rpc.common.ChannelFuturePollingRef;
 import com.kevin.rpc.common.ChannelFutureWrapper;
 import com.kevin.rpc.common.RpcInvocation;
+import com.kevin.rpc.common.config.ClientConfig;
+import com.kevin.rpc.filter.client.ClientFilterChain;
 import com.kevin.rpc.registy.URL;
 import com.kevin.rpc.router.Router;
 import com.kevin.rpc.serialize.SerializeFactory;
@@ -45,5 +47,9 @@ public class CommonClientCache {
     public static Router ROUTER;
     //客户端序列化工厂
     public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
+    //客户但过滤链
+    public static ClientFilterChain CLIENT_FILTER_CHAIN;
+    //客户端配置类
+    public static ClientConfig CLIENT_CONFIG;
 
 }

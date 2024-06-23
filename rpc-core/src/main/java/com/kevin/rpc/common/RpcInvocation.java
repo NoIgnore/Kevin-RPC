@@ -4,6 +4,8 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @Author: HHJ
@@ -37,6 +39,9 @@ public class RpcInvocation implements Serializable {
      */
     private Object response;
 
+    private Map<String, Object> attachments = new ConcurrentHashMap<>();
+    // setAttachments -> com/kevin/rpc/proxy/javassist/JavassistInvocationHandler.java:35
+    // setAttachments -> com/kevin/rpc/proxy/jdk/JDKClientInvocationHandler.java:33
 
     @Override
     public String toString() {

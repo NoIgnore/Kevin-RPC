@@ -45,7 +45,7 @@ public class URL {
 
     /**
      * 将URL转换为写入zk的provider节点下的一段字符串
-     * kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100
+     * kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100;group
      * 这里的100是权重值
      *
      * @param url
@@ -54,7 +54,8 @@ public class URL {
     public static String buildProviderUrlStr(URL url) {
         String host = url.getParameters().get("host");
         String port = url.getParameters().get("port");
-        return new String((url.getApplicationName() + ";" + url.getServiceName() + ";" + host + ":" + port + ";" + System.currentTimeMillis() + ";100").getBytes(), StandardCharsets.UTF_8);
+        String group = url.getParameters().get("group");
+        return new String((url.getApplicationName() + ";" + url.getServiceName() + ";" + host + ":" + port + ";" + System.currentTimeMillis() + ";100;" + group).getBytes(), StandardCharsets.UTF_8);
     }
 
     /**
@@ -72,17 +73,19 @@ public class URL {
 
     /**
      * 将某个节点下的信息转换为一个Provider节点对象
-     * 实际入参: kevin-rpc-server/com.kevin.rpc.interfaces.DataService/服务端IP:服务端端口/当前时间/100(权重)
+     * 实际入参: kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100(权重);default
      *
      * @param providerNodeStr
      * @return
      */
     public static ProviderNodeInfo buildUrlFromUrlStr(String providerNodeStr) {
-        String[] items = providerNodeStr.split("/");
+        String[] items = providerNodeStr.split(";");
         ProviderNodeInfo providerNodeInfo = new ProviderNodeInfo();
-        providerNodeInfo.setServiceName(items[1]);//com.kevin.rpc.interfaces.DataService
-        providerNodeInfo.setAddress(items[2]);//服务端IP:服务端端口
-        providerNodeInfo.setWeight(Integer.valueOf(items[4]));//100(权重)
+        providerNodeInfo.setApplicationName(items[0]);
+        providerNodeInfo.setServiceName(items[1]);
+        providerNodeInfo.setAddress(items[2]);
+        providerNodeInfo.setWeight(Integer.valueOf(items[4]));
+        providerNodeInfo.setGroup(String.valueOf(items[5]));
         return providerNodeInfo;
     }
 

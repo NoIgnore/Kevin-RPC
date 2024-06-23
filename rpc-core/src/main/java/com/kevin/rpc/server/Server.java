@@ -5,6 +5,9 @@ import com.kevin.rpc.common.RpcEncoder;
 import com.kevin.rpc.common.config.ServerConfig;
 import com.kevin.rpc.common.event.RpcListenerLoader;
 import com.kevin.rpc.common.utils.CommonUtil;
+import com.kevin.rpc.filter.server.ServerFilterChain;
+import com.kevin.rpc.filter.server.ServerLogFilterImpl;
+import com.kevin.rpc.filter.server.ServerTokenFilterImpl;
 import com.kevin.rpc.registy.URL;
 import com.kevin.rpc.registy.zookeeper.ZookeeperRegister;
 import com.kevin.rpc.serialize.FastJsonSerializeFactory;
@@ -12,6 +15,7 @@ import com.kevin.rpc.serialize.HessianSerializeFactory;
 import com.kevin.rpc.serialize.JdkSerializeFactory;
 import com.kevin.rpc.serialize.KryoSerializeFactory;
 import com.kevin.rpc.server.impl.DataServiceImpl;
+import com.kevin.rpc.server.impl.UserServiceImpl;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -30,8 +34,6 @@ import static com.kevin.rpc.common.constants.RpcConstants.*;
  **/
 @Data
 public class Server {
-
-    private ServerConfig serverConfig;
 
     public void startServerApplication() throws InterruptedException {
         NioEventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -53,9 +55,12 @@ public class Server {
                 ch.pipeline().addLast(new ServerHandler());
             }
         });
+        //初始化监听器
+        RpcListenerLoader rpcListenerLoader = new RpcListenerLoader();
+        rpcListenerLoader.init();
 
         //初始化序列化器
-        String serverSerialize = serverConfig.getServerSerialize();
+        String serverSerialize = SERVER_CONFIG.getServerSerialize();
         switch (serverSerialize) {
             case JDK_SERIALIZE_TYPE:
                 SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
@@ -73,8 +78,14 @@ public class Server {
                 throw new RuntimeException("no match serialize type for...." + serverSerialize);
         }
 
+        //初始化过滤链
+        ServerFilterChain serverFilterChain = new ServerFilterChain();
+        serverFilterChain.addServerFilter(new ServerLogFilterImpl());
+        serverFilterChain.addServerFilter(new ServerTokenFilterImpl());
+        SERVER_FILTER_CHAIN = serverFilterChain;
+
         this.batchExportUrl();
-        bootstrap.bind(serverConfig.getPort()).sync();
+        bootstrap.bind(SERVER_CONFIG.getPort()).sync();
         System.out.println("========== Server start success ==========");
     }
 
@@ -84,7 +95,7 @@ public class Server {
         serverConfig.setRegisterAddr("localhost:2181");
         serverConfig.setApplicationName("kevin-rpc-server");
         serverConfig.setServerSerialize("kryo");
-        this.setServerConfig(serverConfig);
+        SERVER_CONFIG = serverConfig;
     }
 
     /**
@@ -104,7 +115,8 @@ public class Server {
         task.start();
     }
 
-    public void registryService(Object serviceBean) {
+    public void registryService(ServiceWrapper serviceWrapper) {
+        Object serviceBean = serviceWrapper.getServiceBean();
         if (serviceBean.getClass().getInterfaces().length == 0) {
             throw new RuntimeException("service must had interfaces!");
         }
@@ -113,28 +125,39 @@ public class Server {
             throw new RuntimeException("service must only had one interfaces!");
         }
         if (REGISTRY_SERVICE == null) {
-            REGISTRY_SERVICE = new ZookeeperRegister(serverConfig.getRegisterAddr());
+            REGISTRY_SERVICE = new ZookeeperRegister(SERVER_CONFIG.getRegisterAddr());
         }
         //默认选择该对象的第一个实现接口
         Class<?> interfaceClass = classes[0];
         PROVIDER_CLASS_MAP.put(interfaceClass.getName(), serviceBean);
         URL url = new URL();
         url.setServiceName(interfaceClass.getName());
-        url.setApplicationName(serverConfig.getApplicationName());
+        url.setApplicationName(SERVER_CONFIG.getApplicationName());
         url.addParameter("host", CommonUtil.getIpAddress());
-        url.addParameter("port", String.valueOf(serverConfig.getPort()));
+        url.addParameter("port", String.valueOf(SERVER_CONFIG.getPort()));
+        url.addParameter("group", String.valueOf(serviceWrapper.getGroup()));
+        url.addParameter("limit", String.valueOf(serviceWrapper.getLimit()));
         PROVIDER_URL_SET.add(url);
+        if (CommonUtil.isNotEmpty(serviceWrapper.getServiceToken())) {
+            PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(), serviceWrapper);
+        }
     }
 
     public static void main(String[] args) throws InterruptedException {
         Server server = new Server();
         //初始化配置
         server.initServerConfig();
-        //初始化监听器
-        RpcListenerLoader rpcListenerLoader = new RpcListenerLoader();
-        rpcListenerLoader.init();
+
         //注册服务
-        server.registryService(new DataServiceImpl());
+        ServiceWrapper serviceWrapper1 = new ServiceWrapper(new DataServiceImpl());
+        serviceWrapper1.setGroup("dev");
+        serviceWrapper1.setServiceToken("token-a");
+        server.registryService(serviceWrapper1);
+
+        ServiceWrapper serviceWrapper2 = new ServiceWrapper(new UserServiceImpl());
+        serviceWrapper2.setGroup("test");
+        serviceWrapper2.setServiceToken("token-b");
+        server.registryService(serviceWrapper2);
         //设置回调
         ServerShutdownHook.registryShutdownHook();
         //启动服务

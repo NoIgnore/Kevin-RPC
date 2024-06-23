@@ -1,5 +1,6 @@
 package com.kevin.rpc.proxy.javassist;
 
+import com.kevin.rpc.client.RpcReferenceWrapper;
 import com.kevin.rpc.proxy.ProxyFactory;
 
 /**
@@ -10,8 +11,8 @@ import com.kevin.rpc.proxy.ProxyFactory;
 public class JavassistProxyFactory implements ProxyFactory {
 
     @Override
-    public <T> T getProxy(Class<?> clazz) throws Throwable {
+    public <T> T getProxy(RpcReferenceWrapper<T> rpcReferenceWrapper) throws Throwable {
         return (T) ProxyGenerator.newProxyInstance(Thread.currentThread().getContextClassLoader(),
-                clazz, new JavassistInvocationHandler(clazz));
+                rpcReferenceWrapper.getAimClass(), new JavassistInvocationHandler(rpcReferenceWrapper));
     }
 }

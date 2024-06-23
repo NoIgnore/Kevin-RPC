@@ -1,5 +1,6 @@
 package com.kevin.rpc.proxy.jdk;
 
+import com.kevin.rpc.client.RpcReferenceWrapper;
 import com.kevin.rpc.common.RpcInvocation;
 
 import java.lang.reflect.InvocationHandler;
@@ -14,10 +15,10 @@ public class JDKClientInvocationHandler implements InvocationHandler {
 
     private final static Object OBJECT = new Object();
 
-    private final Class<?> clazz;
+    private final RpcReferenceWrapper<?> rpcReferenceWrapper;
 
-    public JDKClientInvocationHandler(Class<?> clazz) {
-        this.clazz = clazz;
+    public JDKClientInvocationHandler(RpcReferenceWrapper<?> rpcReferenceWrapper) {
+        this.rpcReferenceWrapper = rpcReferenceWrapper;
     }
 
     @Override
@@ -28,8 +29,16 @@ public class JDKClientInvocationHandler implements InvocationHandler {
         System.out.println(args);
         rpcInvocation.setTargetMethod(method.getName());
         System.out.println(method.getName());
-        rpcInvocation.setTargetServiceName(clazz.getName());
-        System.out.println(clazz.getName());
+
+        // com/kevin/rpc/client/Client.java:231
+        // RpcReferenceWrapper<DataService> rpcReferenceWrapper1 = new RpcReferenceWrapper<>();
+        // rpcReferenceWrapper1.setAimClass(DataService.class);
+        // rpcReferenceWrapper1.setGroup("dev");
+        // rpcReferenceWrapper1.setServiceToken("token-a");
+        // rpcReferenceWrapper1.setUrl("192.168.31.128:8010");
+        rpcInvocation.setTargetServiceName(rpcReferenceWrapper.getAimClass().getName());
+        rpcInvocation.setAttachments(rpcReferenceWrapper.getAttachments());
+
         System.out.println("-----------2-----------");
         //注入uuid，对每一次的请求都做单独区分
         rpcInvocation.setUuid(UUID.randomUUID().toString());

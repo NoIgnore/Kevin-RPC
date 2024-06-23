@@ -6,6 +6,7 @@ import com.kevin.rpc.proxy.ProxyFactory;
  * @Author: HHJ
  * @Package: com.kevin.rpc.client
  * @Project: Kevin-RPC
+ * @Description: Rpc远程调用类
  **/
 public class RpcReference {
 
@@ -18,7 +19,7 @@ public class RpcReference {
     /**
      * 根据接口类型获取代理对象
      */
-    public <T> T get(Class<T> tClass) throws Throwable {
-        return proxyFactory.getProxy(tClass);
+    public <T> T get(RpcReferenceWrapper<T> rpcReferenceWrapper) throws Throwable {
+        return proxyFactory.getProxy(rpcReferenceWrapper);
     }
 }

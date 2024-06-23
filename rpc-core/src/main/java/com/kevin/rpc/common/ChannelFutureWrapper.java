@@ -24,4 +24,6 @@ public class ChannelFutureWrapper {
     private Integer weight;
 
     private ChannelFuture channelFuture;
+
+    private String group;
 }
