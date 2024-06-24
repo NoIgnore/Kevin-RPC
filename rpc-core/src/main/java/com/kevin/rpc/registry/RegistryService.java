@@ -1,4 +1,4 @@
-package com.kevin.rpc.registy;
+package com.kevin.rpc.registry;
 
 public interface RegistryService {
 

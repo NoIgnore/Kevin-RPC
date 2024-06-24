@@ -4,7 +4,7 @@ import com.kevin.rpc.common.ChannelFutureWrapper;
 import com.kevin.rpc.common.RpcInvocation;
 import com.kevin.rpc.common.event.data.ProviderNodeInfo;
 import com.kevin.rpc.common.utils.CommonUtil;
-import com.kevin.rpc.registy.URL;
+import com.kevin.rpc.registry.URL;
 import com.kevin.rpc.router.Selector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;

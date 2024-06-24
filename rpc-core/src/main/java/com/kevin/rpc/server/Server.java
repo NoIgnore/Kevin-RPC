@@ -5,15 +5,12 @@ import com.kevin.rpc.common.RpcEncoder;
 import com.kevin.rpc.common.config.ServerConfig;
 import com.kevin.rpc.common.event.RpcListenerLoader;
 import com.kevin.rpc.common.utils.CommonUtil;
+import com.kevin.rpc.filter.ServerFilter;
 import com.kevin.rpc.filter.server.ServerFilterChain;
-import com.kevin.rpc.filter.server.ServerLogFilterImpl;
-import com.kevin.rpc.filter.server.ServerTokenFilterImpl;
-import com.kevin.rpc.registy.URL;
-import com.kevin.rpc.registy.zookeeper.ZookeeperRegister;
-import com.kevin.rpc.serialize.FastJsonSerializeFactory;
-import com.kevin.rpc.serialize.HessianSerializeFactory;
-import com.kevin.rpc.serialize.JdkSerializeFactory;
-import com.kevin.rpc.serialize.KryoSerializeFactory;
+import com.kevin.rpc.registry.AbstractRegister;
+import com.kevin.rpc.registry.RegistryService;
+import com.kevin.rpc.registry.URL;
+import com.kevin.rpc.serialize.SerializeFactory;
 import com.kevin.rpc.server.impl.DataServiceImpl;
 import com.kevin.rpc.server.impl.UserServiceImpl;
 import io.netty.bootstrap.ServerBootstrap;
@@ -24,8 +21,14 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.Data;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static com.kevin.rpc.common.cache.CommonClientCache.EXTENSION_LOADER;
 import static com.kevin.rpc.common.cache.CommonServerCache.*;
-import static com.kevin.rpc.common.constants.RpcConstants.*;
+import static com.kevin.rpc.common.utils.CommonUtil.initializeComponent;
+import static com.kevin.rpc.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
  * @Author: HHJ
@@ -35,7 +38,7 @@ import static com.kevin.rpc.common.constants.RpcConstants.*;
 @Data
 public class Server {
 
-    public void startServerApplication() throws InterruptedException {
+    public void startServerApplication() throws InterruptedException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         NioEventLoopGroup bossGroup = new NioEventLoopGroup();
         NioEventLoopGroup workerGroup = new NioEventLoopGroup();
         ServerBootstrap bootstrap = new ServerBootstrap();
@@ -61,27 +64,20 @@ public class Server {
 
         //初始化序列化器
         String serverSerialize = SERVER_CONFIG.getServerSerialize();
-        switch (serverSerialize) {
-            case JDK_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new JdkSerializeFactory();
-                break;
-            case FAST_JSON_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
-                break;
-            case HESSIAN2_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new HessianSerializeFactory();
-                break;
-            case KRYO_SERIALIZE_TYPE:
-                SERVER_SERIALIZE_FACTORY = new KryoSerializeFactory();
-                break;
-            default:
-                throw new RuntimeException("no match serialize type for...." + serverSerialize);
-        }
+        SERVER_SERIALIZE_FACTORY = initializeComponent(SerializeFactory.class, serverSerialize);
 
         //初始化过滤链
         ServerFilterChain serverFilterChain = new ServerFilterChain();
-        serverFilterChain.addServerFilter(new ServerLogFilterImpl());
-        serverFilterChain.addServerFilter(new ServerTokenFilterImpl());
+        EXTENSION_LOADER.loadExtension(ServerFilter.class);
+        LinkedHashMap<String, Class<?>> filterChainMap = EXTENSION_LOADER_CLASS_CACHE.get(ServerFilter.class.getName());
+        for (Map.Entry<String, Class<?>> filterChainEntry : filterChainMap.entrySet()) {
+            String filterChainKey = filterChainEntry.getKey();
+            Class<?> filterChainImpl = filterChainEntry.getValue();
+            if (filterChainImpl == null) {
+                throw new RuntimeException("no match filterChainImpl for " + filterChainKey);
+            }
+            serverFilterChain.addServerFilter((ServerFilter) filterChainImpl.newInstance());
+        }
         SERVER_FILTER_CHAIN = serverFilterChain;
 
         this.batchExportUrl();
@@ -93,6 +89,7 @@ public class Server {
         ServerConfig serverConfig = new ServerConfig();
         serverConfig.setPort(8010);
         serverConfig.setRegisterAddr("localhost:2181");
+        serverConfig.setRegisterType("zookeeper");
         serverConfig.setApplicationName("kevin-rpc-server");
         serverConfig.setServerSerialize("kryo");
         SERVER_CONFIG = serverConfig;
@@ -125,7 +122,11 @@ public class Server {
             throw new RuntimeException("service must only had one interfaces!");
         }
         if (REGISTRY_SERVICE == null) {
-            REGISTRY_SERVICE = new ZookeeperRegister(SERVER_CONFIG.getRegisterAddr());
+            try {
+                REGISTRY_SERVICE = (AbstractRegister) initializeComponent(RegistryService.class, SERVER_CONFIG.getRegisterType());
+            } catch (Exception e) {
+                throw new RuntimeException("registryServiceType unKnow,error is ", e);
+            }
         }
         //默认选择该对象的第一个实现接口
         Class<?> interfaceClass = classes[0];
@@ -143,7 +144,7 @@ public class Server {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         Server server = new Server();
         //初始化配置
         server.initServerConfig();

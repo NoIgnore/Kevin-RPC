@@ -1,17 +1,19 @@
 package com.kevin.rpc.common.event;
 
-import com.kevin.rpc.common.event.listener.ProviderNodeUpdateListener;
 import com.kevin.rpc.common.event.listener.RpcListener;
-import com.kevin.rpc.common.event.listener.ServiceDestroyListener;
-import com.kevin.rpc.common.event.listener.ServiceUpdateListener;
 import com.kevin.rpc.common.utils.CommonUtil;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static com.kevin.rpc.common.cache.CommonClientCache.EXTENSION_LOADER;
+import static com.kevin.rpc.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
  * @Author: HHJ
@@ -24,10 +26,22 @@ public class RpcListenerLoader {
 
     private static ExecutorService eventThreadPool = Executors.newFixedThreadPool(2);
 
+    public static void registerListener(RpcListener<?> rpcListener) {
+        rpcListenerList.add(rpcListener);
+    }
+
     public void init() {
-        rpcListenerList.add(new ServiceUpdateListener());
-        rpcListenerList.add(new ServiceDestroyListener());
-        rpcListenerList.add(new ProviderNodeUpdateListener());
+        try {
+            EXTENSION_LOADER.loadExtension(RpcListener.class);
+            LinkedHashMap<String, Class<?>> listenerMap = EXTENSION_LOADER_CLASS_CACHE.get(RpcListener.class.getName());
+            for (Map.Entry<String, Class<?>> listenerEntry : listenerMap.entrySet()) {
+                String key = listenerEntry.getKey();
+                Class<?> listener = listenerEntry.getValue();
+                registerListener((RpcListener<?>) listener.newInstance());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("registerListener unKnow,error is ", e);
+        }
     }
 
     public static void sendEvent(RpcEvent rpcEvent) {
@@ -52,7 +66,6 @@ public class RpcListenerLoader {
      * 同步事件处理，可能会堵塞, 暂定传入的是一个 RpcDestroyEvent
      */
     public static void sendSyncEvent(RpcEvent iRpcEvent) {
-        System.out.println("rpcListenerList：" + rpcListenerList);
         if (CommonUtil.isEmptyList(rpcListenerList)) {
             return;
         }

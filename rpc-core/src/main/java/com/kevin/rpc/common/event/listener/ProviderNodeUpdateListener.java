@@ -3,7 +3,7 @@ package com.kevin.rpc.common.event.listener;
 import com.kevin.rpc.common.ChannelFutureWrapper;
 import com.kevin.rpc.common.event.RpcNodeUpdateEvent;
 import com.kevin.rpc.common.event.data.ProviderNodeInfo;
-import com.kevin.rpc.registy.URL;
+import com.kevin.rpc.registry.URL;
 
 import java.util.List;
 

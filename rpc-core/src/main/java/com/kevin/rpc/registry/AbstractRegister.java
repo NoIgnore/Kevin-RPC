@@ -1,4 +1,4 @@
-package com.kevin.rpc.registy;
+package com.kevin.rpc.registry;
 
 import java.util.List;
 import java.util.Map;

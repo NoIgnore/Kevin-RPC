@@ -1,0 +1,3 @@
+providerNodeUpdateListener=com.kevin.rpc.common.event.listener.ProviderNodeUpdateListener
+serviceDestroyListener=com.kevin.rpc.common.event.listener.ServiceDestroyListener
+serviceUpdateListener=com.kevin.rpc.common.event.listener.ServiceUpdateListener

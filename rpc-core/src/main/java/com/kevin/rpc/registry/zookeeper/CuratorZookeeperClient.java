@@ -1,4 +1,4 @@
-package com.kevin.rpc.registy.zookeeper;
+package com.kevin.rpc.registry.zookeeper;
 
 import lombok.Getter;
 import org.apache.curator.RetryPolicy;

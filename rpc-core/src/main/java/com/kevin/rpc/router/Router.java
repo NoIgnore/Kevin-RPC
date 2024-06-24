@@ -1,7 +1,7 @@
 package com.kevin.rpc.router;
 
 import com.kevin.rpc.common.ChannelFutureWrapper;
-import com.kevin.rpc.registy.URL;
+import com.kevin.rpc.registry.URL;
 
 public interface Router {
 

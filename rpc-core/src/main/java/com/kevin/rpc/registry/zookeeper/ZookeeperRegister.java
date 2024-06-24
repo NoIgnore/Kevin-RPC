@@ -1,4 +1,4 @@
-package com.kevin.rpc.registy.zookeeper;
+package com.kevin.rpc.registry.zookeeper;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
@@ -8,13 +8,16 @@ import com.kevin.rpc.common.event.RpcNodeUpdateEvent;
 import com.kevin.rpc.common.event.RpcUpdateEvent;
 import com.kevin.rpc.common.event.data.ProviderNodeInfo;
 import com.kevin.rpc.common.event.data.URLChangeWrapper;
-import com.kevin.rpc.registy.AbstractRegister;
-import com.kevin.rpc.registy.RegistryService;
-import com.kevin.rpc.registy.URL;
+import com.kevin.rpc.registry.AbstractRegister;
+import com.kevin.rpc.registry.RegistryService;
+import com.kevin.rpc.registry.URL;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.kevin.rpc.common.cache.CommonClientCache.CLIENT_CONFIG;
+import static com.kevin.rpc.common.cache.CommonServerCache.SERVER_CONFIG;
 
 public class ZookeeperRegister extends AbstractRegister implements RegistryService {
 
@@ -22,8 +25,9 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
 
     private final String ROOT = "/kevin-rpc";
 
-    public ZookeeperRegister(String address) {
-        this.zkClient = new CuratorZookeeperClient(address);
+    public ZookeeperRegister() {
+        String registryAddr = CLIENT_CONFIG != null ? CLIENT_CONFIG.getRegisterAddr() : SERVER_CONFIG.getRegisterAddr();
+        this.zkClient = new CuratorZookeeperClient(registryAddr);
     }
 
     /**
@@ -127,7 +131,7 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
 
     public void watchChildNodeData(String newServerNodePath) {
         zkClient.watchChildNodeData(newServerNodePath, watchedEvent -> {
-            System.out.println("watchedEvent : " + watchedEvent);
+            System.out.println("watchChildNodeData:" + watchedEvent);
             // /kevin-rpc/com.kevin.rpc.interfaces.DataService/provider
             String path = watchedEvent.getPath();
             List<String> childrenDataList = zkClient.getChildrenData(path);
@@ -147,6 +151,7 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
      */
     public void watchNodeDataChange(String newServerNodePath) {
         zkClient.watchNodeData(newServerNodePath, watchedEvent -> {
+            System.out.println("watchNodeDataChange:" + watchedEvent);
             String path = watchedEvent.getPath();
             String nodeData = zkClient.getNodeData(path);
             //kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100

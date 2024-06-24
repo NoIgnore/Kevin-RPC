@@ -1,0 +1,4 @@
+fastJson=com.kevin.rpc.serialize.fastjson.FastJsonSerializeFactory
+hessian=com.kevin.rpc.serialize.hessian.HessianSerializeFactory
+jdk=com.kevin.rpc.serialize.jdk.JdkSerializeFactory
+kryo=com.kevin.rpc.serialize.kryo.KryoSerializeFactory

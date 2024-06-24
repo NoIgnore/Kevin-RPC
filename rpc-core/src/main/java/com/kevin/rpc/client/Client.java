@@ -8,23 +8,16 @@ import com.kevin.rpc.common.RpcProtocol;
 import com.kevin.rpc.common.config.ClientConfig;
 import com.kevin.rpc.common.event.RpcListenerLoader;
 import com.kevin.rpc.common.utils.CommonUtil;
+import com.kevin.rpc.filter.ClientFilter;
 import com.kevin.rpc.filter.client.ClientFilterChain;
-import com.kevin.rpc.filter.client.ClientLogFilterImpl;
-import com.kevin.rpc.filter.client.DirectInvokeFilterImpl;
-import com.kevin.rpc.filter.client.GroupFilterImpl;
 import com.kevin.rpc.interfaces.DataService;
 import com.kevin.rpc.interfaces.UserService;
-import com.kevin.rpc.proxy.javassist.JavassistProxyFactory;
-import com.kevin.rpc.proxy.jdk.JDKProxyFactory;
-import com.kevin.rpc.registy.AbstractRegister;
-import com.kevin.rpc.registy.URL;
-import com.kevin.rpc.registy.zookeeper.ZookeeperRegister;
-import com.kevin.rpc.router.RandomRouterImpl;
-import com.kevin.rpc.router.RotateRouterImpl;
-import com.kevin.rpc.serialize.FastJsonSerializeFactory;
-import com.kevin.rpc.serialize.HessianSerializeFactory;
-import com.kevin.rpc.serialize.JdkSerializeFactory;
-import com.kevin.rpc.serialize.KryoSerializeFactory;
+import com.kevin.rpc.proxy.ProxyFactory;
+import com.kevin.rpc.registry.AbstractRegister;
+import com.kevin.rpc.registry.RegistryService;
+import com.kevin.rpc.registry.URL;
+import com.kevin.rpc.router.Router;
+import com.kevin.rpc.serialize.SerializeFactory;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -33,11 +26,14 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.Getter;
 
+import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.kevin.rpc.common.cache.CommonClientCache.*;
-import static com.kevin.rpc.common.constants.RpcConstants.*;
+import static com.kevin.rpc.common.utils.CommonUtil.initializeComponent;
+import static com.kevin.rpc.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
 /**
  * @Author: HHJ
@@ -52,7 +48,7 @@ public class Client {
     @Getter
     private final Bootstrap bootstrap = new Bootstrap();
 
-    public RpcReference initClientApplication() throws InterruptedException {
+    public RpcReference initClientApplication() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         NioEventLoopGroup clientGroup = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(clientGroup);
@@ -74,56 +70,41 @@ public class Client {
         RpcListenerLoader rpcListenerLoader = new RpcListenerLoader();
         rpcListenerLoader.init();
 
-        //初始化路由策略
+        // 初始化路由策略
         String routerStrategy = CLIENT_CONFIG.getRouterStrategy();
-        if (RANDOM_ROUTER_TYPE.equals(routerStrategy)) {
-            ROUTER = new RandomRouterImpl();
-        } else if (ROTATE_ROUTER_TYPE.equals(routerStrategy)) {
-            ROUTER = new RotateRouterImpl();
-        }
+        ROUTER = initializeComponent(Router.class, routerStrategy);
 
-        //初始化序列化器
+        // 初始化序列化器
         String clientSerialize = CLIENT_CONFIG.getClientSerialize();
-        switch (clientSerialize) {
-            case JDK_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new JdkSerializeFactory();
-                break;
-            case FAST_JSON_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new FastJsonSerializeFactory();
-                break;
-            case HESSIAN2_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new HessianSerializeFactory();
-                break;
-            case KRYO_SERIALIZE_TYPE:
-                CLIENT_SERIALIZE_FACTORY = new KryoSerializeFactory();
-                break;
-            default:
-                throw new RuntimeException("no match serialize type for" + clientSerialize);
-        }
+        CLIENT_SERIALIZE_FACTORY = initializeComponent(SerializeFactory.class, clientSerialize);
 
         //初始化过滤链
         ClientFilterChain clientFilterChain = new ClientFilterChain();
-        clientFilterChain.addClientFilter(new ClientLogFilterImpl());
-        clientFilterChain.addClientFilter(new GroupFilterImpl());
-        clientFilterChain.addClientFilter(new DirectInvokeFilterImpl());
+        EXTENSION_LOADER.loadExtension(ClientFilter.class);
+        LinkedHashMap<String, Class<?>> filterChainMap = EXTENSION_LOADER_CLASS_CACHE.get(ClientFilter.class.getName());
+        for (Map.Entry<String, Class<?>> filterChainEntry : filterChainMap.entrySet()) {
+            String filterChainKey = filterChainEntry.getKey();
+            Class<?> filterChainImpl = filterChainEntry.getValue();
+            if (filterChainImpl == null) {
+                throw new RuntimeException("no match filterChainImpl for " + filterChainKey);
+            }
+            clientFilterChain.addClientFilter((ClientFilter) filterChainImpl.newInstance());
+        }
         CLIENT_FILTER_CHAIN = clientFilterChain;
 
         //初始化代理工厂
-        RpcReference rpcReference;
-        if (JAVASSIST_PROXY_TYPE.equals(CLIENT_CONFIG.getProxyType())) {
-            rpcReference = new RpcReference(new JavassistProxyFactory());
-        } else {
-            rpcReference = new RpcReference(new JDKProxyFactory());
-        }
+        String proxyType = CLIENT_CONFIG.getProxyType();
+        ProxyFactory factory = initializeComponent(ProxyFactory.class, proxyType);
+        return new RpcReference(factory);
 
-        return rpcReference;
     }
 
     public void initClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setRegisterAddr("localhost:2181");
+        clientConfig.setRegisterType("zookeeper");
         clientConfig.setApplicationName("kevin-rpc-client");
-        clientConfig.setProxyType("JDK");
+        clientConfig.setProxyType("jdk");
         clientConfig.setRouterStrategy("random");
         clientConfig.setClientSerialize("kryo");
         CLIENT_CONFIG = clientConfig;
@@ -134,7 +115,13 @@ public class Client {
      */
     public void doSubscribeService(Class<?> serviceBean) {
         if (abstractRegister == null) {
-            abstractRegister = new ZookeeperRegister(CLIENT_CONFIG.getRegisterAddr());
+            try {
+                //初始化注册中心
+                String registerType = CLIENT_CONFIG.getRegisterType();
+                abstractRegister = (AbstractRegister) initializeComponent(RegistryService.class, registerType);
+            } catch (Exception e) {
+                throw new RuntimeException("registryServiceType unKnow,error is ", e);
+            }
         }
         URL url = new URL();
         url.setApplicationName(CLIENT_CONFIG.getApplicationName());
@@ -238,7 +225,7 @@ public class Client {
         List<String> list = dataService.getList();
         System.out.println(list);
 
-        for (int i = 100; i < 999; ++i) {
+        for (int i = 100; i < 103; ++i) {
             Thread.sleep(1000);
             String msg = i + ":msg from client.";
             String s = dataService.sendData(msg);

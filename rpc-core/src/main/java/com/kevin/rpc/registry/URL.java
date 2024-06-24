@@ -1,4 +1,4 @@
-package com.kevin.rpc.registy;
+package com.kevin.rpc.registry;
 
 import com.kevin.rpc.common.event.data.ProviderNodeInfo;
 import lombok.Data;

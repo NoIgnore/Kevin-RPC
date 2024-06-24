@@ -1,4 +1,4 @@
-package com.kevin.rpc.registy.zookeeper;
+package com.kevin.rpc.registry.zookeeper;
 
 import lombok.Data;
 import org.apache.zookeeper.Watcher;

@@ -5,9 +5,10 @@ import com.kevin.rpc.common.ChannelFutureWrapper;
 import com.kevin.rpc.common.RpcInvocation;
 import com.kevin.rpc.common.config.ClientConfig;
 import com.kevin.rpc.filter.client.ClientFilterChain;
-import com.kevin.rpc.registy.URL;
+import com.kevin.rpc.registry.URL;
 import com.kevin.rpc.router.Router;
 import com.kevin.rpc.serialize.SerializeFactory;
+import com.kevin.rpc.spi.ExtensionLoader;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -51,5 +52,6 @@ public class CommonClientCache {
     public static ClientFilterChain CLIENT_FILTER_CHAIN;
     //客户端配置类
     public static ClientConfig CLIENT_CONFIG;
-
+    //SPI加载组件
+    public static ExtensionLoader EXTENSION_LOADER = new ExtensionLoader();
 }
