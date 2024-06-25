@@ -48,7 +48,7 @@ public class CommonClientCache {
     public static Router ROUTER;
     //客户端序列化工厂
     public static SerializeFactory CLIENT_SERIALIZE_FACTORY;
-    //客户但过滤链
+    //客户端过滤链
     public static ClientFilterChain CLIENT_FILTER_CHAIN;
     //客户端配置类
     public static ClientConfig CLIENT_CONFIG;

@@ -19,11 +19,14 @@ import com.kevin.rpc.registry.URL;
 import com.kevin.rpc.router.Router;
 import com.kevin.rpc.serialize.SerializeFactory;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -32,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.kevin.rpc.common.cache.CommonClientCache.*;
+import static com.kevin.rpc.common.constants.RpcConstants.DEFAULT_DECODE_CHAR;
+import static com.kevin.rpc.common.constants.RpcConstants.DEFAULT_TIMEOUT;
 import static com.kevin.rpc.common.utils.CommonUtil.initializeComponent;
 import static com.kevin.rpc.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
@@ -55,8 +60,10 @@ public class Client {
         bootstrap.channel(NioSocketChannel.class);
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
-            protected void initChannel(SocketChannel ch) throws Exception {
+            protected void initChannel(SocketChannel ch) {
                 //初始化管道，包含了编解码器和客户端响应类
+                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(CLIENT_CONFIG.getMaxServerRespDataSize(), delimiter));
                 ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new RpcDecoder());
                 ch.pipeline().addLast(new ClientHandler());
@@ -107,6 +114,8 @@ public class Client {
         clientConfig.setProxyType("jdk");
         clientConfig.setRouterStrategy("random");
         clientConfig.setClientSerialize("kryo");
+        clientConfig.setTimeOut(DEFAULT_TIMEOUT);
+        clientConfig.setMaxServerRespDataSize(1000);
         CLIENT_CONFIG = clientConfig;
     }
 
@@ -219,18 +228,20 @@ public class Client {
         rpcReferenceWrapper1.setGroup("dev");
         rpcReferenceWrapper1.setServiceToken("token-a");
         rpcReferenceWrapper1.setUrl("192.168.31.128:8010");
+        rpcReferenceWrapper1.setRetry(1);
+        rpcReferenceWrapper1.setTimeOut(CLIENT_CONFIG.getTimeOut());
         DataService dataService = rpcReference.get(rpcReferenceWrapper1);
 
         //调用远程方法
-        List<String> list = dataService.getList();
-        System.out.println(list);
-
-        for (int i = 100; i < 105; ++i) {
-            Thread.sleep(1000);
-            String msg = i + ":msg from client.";
-            String s = dataService.sendData(msg);
-            System.out.println(i + ":" + s);
-        }
+        //List<String> list = dataService.getList();
+        //System.out.println(list);
+        //
+        //for (int i = 100; i < 105; ++i) {
+        //    Thread.sleep(1000);
+        //    String msg = i + ":msg from client.";
+        //    String s = dataService.sendData(msg);
+        //    System.out.println(i + ":" + s);
+        //}
         // dataService.testError();
         // dataService.testErrorV2();
 
@@ -239,6 +250,7 @@ public class Client {
         rpcReferenceWrapper2.setAimClass(UserService.class);
         rpcReferenceWrapper2.setGroup("test");
         rpcReferenceWrapper2.setServiceToken("token-b");
+        rpcReferenceWrapper2.setRetry(3);
         rpcReferenceWrapper2.setAsync(true);
         // rpcReferenceWrapper2.setUrl("192.168.31.123:8010");
         UserService userService = rpcReference.get(rpcReferenceWrapper2);

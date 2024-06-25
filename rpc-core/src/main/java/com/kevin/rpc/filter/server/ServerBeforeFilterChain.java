@@ -11,9 +11,9 @@ import java.util.List;
  * @Package: com.kevin.rpc.filter.server
  * @Project: Kevin-RPC
  * @Date: 2024/6/23
- * @Description: 服务端模块的过滤链设计
+ * @Description: 服务端模块的前置过滤链设计
  **/
-public class ServerFilterChain {
+public class ServerBeforeFilterChain {
 
     private static List<ServerFilter> serverFilters = new ArrayList<>();
 

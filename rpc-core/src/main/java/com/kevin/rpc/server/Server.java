@@ -2,11 +2,14 @@ package com.kevin.rpc.server;
 
 import com.kevin.rpc.common.RpcDecoder;
 import com.kevin.rpc.common.RpcEncoder;
+import com.kevin.rpc.common.ServerServiceSemaphoreWrapper;
+import com.kevin.rpc.common.annotations.SPI;
 import com.kevin.rpc.common.config.ServerConfig;
 import com.kevin.rpc.common.event.RpcListenerLoader;
 import com.kevin.rpc.common.utils.CommonUtil;
 import com.kevin.rpc.filter.ServerFilter;
-import com.kevin.rpc.filter.server.ServerFilterChain;
+import com.kevin.rpc.filter.server.ServerAfterFilterChain;
+import com.kevin.rpc.filter.server.ServerBeforeFilterChain;
 import com.kevin.rpc.registry.AbstractRegister;
 import com.kevin.rpc.registry.RegistryService;
 import com.kevin.rpc.registry.URL;
@@ -49,7 +52,9 @@ public class Server {
         bootstrap.option(ChannelOption.SO_SNDBUF, 16 * 1024)
                 .option(ChannelOption.SO_RCVBUF, 16 * 1024)
                 .option(ChannelOption.SO_KEEPALIVE, true);
-
+        //服务端采用单一长连接的模式，这里所支持的最大连接数和机器本身的性能有关
+        //连接防护的handler应该绑定在Main-Reactor上
+        bootstrap.handler(new MaxConnectionLimitHandler(SERVER_CONFIG.getMaxConnections()));
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) {
@@ -67,7 +72,8 @@ public class Server {
         SERVER_SERIALIZE_FACTORY = initializeComponent(SerializeFactory.class, serverSerialize);
 
         //初始化过滤链
-        ServerFilterChain serverFilterChain = new ServerFilterChain();
+        ServerBeforeFilterChain serverBeforeFilterChain = new ServerBeforeFilterChain();
+        ServerAfterFilterChain serverAfterFilterChain = new ServerAfterFilterChain();
         EXTENSION_LOADER.loadExtension(ServerFilter.class);
         LinkedHashMap<String, Class<?>> filterChainMap = EXTENSION_LOADER_CLASS_CACHE.get(ServerFilter.class.getName());
         for (Map.Entry<String, Class<?>> filterChainEntry : filterChainMap.entrySet()) {
@@ -76,9 +82,16 @@ public class Server {
             if (filterChainImpl == null) {
                 throw new RuntimeException("no match filterChainImpl for " + filterChainKey);
             }
-            serverFilterChain.addServerFilter((ServerFilter) filterChainImpl.newInstance());
+            SPI spi = (SPI) filterChainImpl.getDeclaredAnnotation(SPI.class);
+            if (spi != null && "before".equalsIgnoreCase(spi.value())) {
+                serverBeforeFilterChain.addServerFilter((ServerFilter) filterChainImpl.newInstance());
+            } else if (spi != null && "after".equalsIgnoreCase(spi.value())) {
+                serverAfterFilterChain.addServerFilter((ServerFilter) filterChainImpl.newInstance());
+            }
         }
-        SERVER_FILTER_CHAIN = serverFilterChain;
+        SERVER_BEFORE_FILTER_CHAIN = serverBeforeFilterChain;
+        SERVER_AFTER_FILTER_CHAIN = serverAfterFilterChain;
+
 
         //初始化请求分发器
         SERVER_CHANNEL_DISPATCHER.init(SERVER_CONFIG.getServerQueueSize(), SERVER_CONFIG.getServerBizThreadNums());
@@ -98,6 +111,8 @@ public class Server {
         serverConfig.setServerSerialize("kryo");
         serverConfig.setServerQueueSize(5000);
         serverConfig.setServerBizThreadNums(12);
+        serverConfig.setMaxConnections(512);
+        serverConfig.setMaxServerRequestData(1000);
         SERVER_CONFIG = serverConfig;
     }
 
@@ -145,6 +160,7 @@ public class Server {
         url.addParameter("group", String.valueOf(serviceWrapper.getGroup()));
         url.addParameter("limit", String.valueOf(serviceWrapper.getLimit()));
         PROVIDER_URL_SET.add(url);
+        SERVER_SERVICE_SEMAPHORE_MAP.put(interfaceClass.getName(), new ServerServiceSemaphoreWrapper(serviceWrapper.getLimit()));
         if (CommonUtil.isNotEmpty(serviceWrapper.getServiceToken())) {
             PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(), serviceWrapper);
         }
@@ -159,11 +175,13 @@ public class Server {
         ServiceWrapper serviceWrapper1 = new ServiceWrapper(new DataServiceImpl());
         serviceWrapper1.setGroup("dev");
         serviceWrapper1.setServiceToken("token-a");
+        serviceWrapper1.setLimit(2);
         server.registryService(serviceWrapper1);
 
         ServiceWrapper serviceWrapper2 = new ServiceWrapper(new UserServiceImpl());
         serviceWrapper2.setGroup("test");
         serviceWrapper2.setServiceToken("token-b");
+        // serviceWrapper2.setLimit(4);
         server.registryService(serviceWrapper2);
         //设置回调
         ServerShutdownHook.registryShutdownHook();

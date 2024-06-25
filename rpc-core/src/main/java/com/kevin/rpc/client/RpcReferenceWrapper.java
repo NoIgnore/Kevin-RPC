@@ -49,4 +49,23 @@ public class RpcReferenceWrapper<T> {
     public void setGroup(String group) {
         attachments.put("group", group);
     }
+
+    /**
+     * 失败重试次数
+     */
+    public int getRetry() {
+        return (int) attachments.getOrDefault("retry", 0);
+    }
+
+    public void setRetry(int retry) {
+        this.attachments.put("retry", retry);
+    }
+
+    public void setTimeOut(int timeOut) {
+        attachments.put("timeOut", timeOut);
+    }
+
+    public String getTimeOut() {
+        return (String) (attachments.get("timeOut"));
+    }
 }

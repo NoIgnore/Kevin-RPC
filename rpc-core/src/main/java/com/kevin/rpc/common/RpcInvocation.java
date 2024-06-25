@@ -43,6 +43,15 @@ public class RpcInvocation implements Serializable {
     // setAttachments -> com/kevin/rpc/proxy/javassist/JavassistInvocationHandler.java:35
     // setAttachments -> com/kevin/rpc/proxy/jdk/JDKClientInvocationHandler.java:33
 
+    /**
+     * 记录服务端抛出的异常信息
+     */
+    private Throwable e;
+    /**
+     * 失败重试次数
+     */
+    private int retry;
+
     @Override
     public String toString() {
         return "RpcInvocation{" +

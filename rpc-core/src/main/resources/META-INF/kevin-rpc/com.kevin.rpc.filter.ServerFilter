@@ -1,2 +1,4 @@
 serverLogFilterImpl=com.kevin.rpc.filter.server.ServerLogFilterImpl
 serverTokenFilterImpl=com.kevin.rpc.filter.server.ServerTokenFilterImpl
+serverServiceBeforeLimitFilterImpl=com.kevin.rpc.filter.server.ServerServiceBeforeLimitFilterImpl
+serverServiceAfterLimitFilterImpl=com.kevin.rpc.filter.server.ServerServiceAfterLimitFilterImpl

@@ -30,4 +30,14 @@ public class ClientConfig {
      * 负载均衡策略 example:random,rotate
      */
     private String routerStrategy;
+
+    /**
+     * 客户端发数据的超时时间
+     */
+    private Integer timeOut;
+
+    /**
+     * 客户端最大响应数据体积
+     */
+    private Integer maxServerRespDataSize;
 }

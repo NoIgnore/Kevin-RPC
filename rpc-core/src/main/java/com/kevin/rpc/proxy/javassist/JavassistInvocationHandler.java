@@ -10,6 +10,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.kevin.rpc.common.cache.CommonClientCache.RESP_MAP;
 import static com.kevin.rpc.common.cache.CommonClientCache.SEND_QUEUE;
+import static com.kevin.rpc.common.constants.RpcConstants.DEFAULT_TIMEOUT;
 
 /**
  * @Author: HHJ
@@ -41,7 +42,7 @@ public class JavassistInvocationHandler implements InvocationHandler {
             return null;
         }
         long beginTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - beginTime < 3 * 1000) {
+        while (System.currentTimeMillis() - beginTime < DEFAULT_TIMEOUT) {
             Object object = RESP_MAP.get(rpcInvocation.getUuid());
             if (object instanceof RpcInvocation) {
                 RESP_MAP.remove(rpcInvocation.getUuid());

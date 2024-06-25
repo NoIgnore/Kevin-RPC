@@ -3,6 +3,7 @@ package com.kevin.rpc.dispatcher;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.kevin.rpc.common.RpcInvocation;
 import com.kevin.rpc.common.RpcProtocol;
+import com.kevin.rpc.common.exception.RpcException;
 import com.kevin.rpc.server.ServerChannelReadData;
 import lombok.NoArgsConstructor;
 
@@ -49,21 +50,43 @@ public class ServerChannelDispatcher {
                             RpcProtocol rpcProtocol = serverChannelReadData.getRpcProtocol();
                             RpcInvocation rpcInvocation = SERVER_SERIALIZE_FACTORY.deserialize(rpcProtocol.getContent(), RpcInvocation.class);
                             //执行过滤链路
-                            SERVER_FILTER_CHAIN.doFilter(rpcInvocation);
+                            try {
+                                SERVER_BEFORE_FILTER_CHAIN.doFilter(rpcInvocation);
+                            } catch (Exception cause) {
+                                //针对自定义异常进行捕获，并且直接返回异常信息给到客户端，然后打印结果
+                                if (cause instanceof RpcException) {
+                                    RpcException rpcException = (RpcException) cause;
+                                    RpcInvocation reqParam = rpcException.getRpcInvocation();
+                                    rpcInvocation.setE(rpcException);
+                                    byte[] body = SERVER_SERIALIZE_FACTORY.serialize(reqParam);
+                                    RpcProtocol respRpcProtocol = new RpcProtocol(body);
+                                    serverChannelReadData.getChannelHandlerContext().writeAndFlush(respRpcProtocol);
+                                    return;
+                                }
+                            }
                             Object aimObject = PROVIDER_CLASS_MAP.get(rpcInvocation.getTargetServiceName());
                             Method[] methods = aimObject.getClass().getDeclaredMethods();
                             Object result = null;
                             for (Method method : methods) {
                                 if (method.getName().equals(rpcInvocation.getTargetMethod())) {
                                     if (method.getReturnType().equals(Void.TYPE)) {
-                                        method.invoke(aimObject, rpcInvocation.getArgs());
+                                        try {
+                                            method.invoke(aimObject, rpcInvocation.getArgs());
+                                        } catch (Exception e) {
+                                            rpcInvocation.setE(e);
+                                        }
                                     } else {
-                                        result = method.invoke(aimObject, rpcInvocation.getArgs());
+                                        try {
+                                            result = method.invoke(aimObject, rpcInvocation.getArgs());
+                                        } catch (Exception e) {
+                                            rpcInvocation.setE(e);
+                                        }
                                     }
                                     break;
                                 }
                             }
                             rpcInvocation.setResponse(result);
+                            SERVER_AFTER_FILTER_CHAIN.doFilter(rpcInvocation);
                             RpcProtocol respRpcProtocol = new RpcProtocol(SERVER_SERIALIZE_FACTORY.serialize(rpcInvocation));
                             serverChannelReadData.getChannelHandlerContext().writeAndFlush(respRpcProtocol);
                         } catch (Exception e) {

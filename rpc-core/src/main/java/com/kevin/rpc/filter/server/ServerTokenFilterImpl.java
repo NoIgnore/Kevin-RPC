@@ -1,6 +1,7 @@
 package com.kevin.rpc.filter.server;
 
 import com.kevin.rpc.common.RpcInvocation;
+import com.kevin.rpc.common.annotations.SPI;
 import com.kevin.rpc.common.utils.CommonUtil;
 import com.kevin.rpc.filter.ServerFilter;
 import com.kevin.rpc.server.ServiceWrapper;
@@ -14,6 +15,7 @@ import static com.kevin.rpc.common.cache.CommonServerCache.PROVIDER_SERVICE_WRAP
  * @Date: 2024/6/23
  * @Description: 简单版本的token校验
  **/
+@SPI("before")
 public class ServerTokenFilterImpl implements ServerFilter {
 
     @Override

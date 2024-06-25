@@ -1,9 +1,11 @@
 package com.kevin.rpc.common.cache;
 
 
+import com.kevin.rpc.common.ServerServiceSemaphoreWrapper;
 import com.kevin.rpc.common.config.ServerConfig;
 import com.kevin.rpc.dispatcher.ServerChannelDispatcher;
-import com.kevin.rpc.filter.server.ServerFilterChain;
+import com.kevin.rpc.filter.server.ServerAfterFilterChain;
+import com.kevin.rpc.filter.server.ServerBeforeFilterChain;
 import com.kevin.rpc.registry.RegistryService;
 import com.kevin.rpc.registry.URL;
 import com.kevin.rpc.serialize.SerializeFactory;
@@ -42,7 +44,9 @@ public class CommonServerCache {
     /**
      * 服务端过滤链
      */
-    public static ServerFilterChain SERVER_FILTER_CHAIN;
+    public static ServerBeforeFilterChain SERVER_BEFORE_FILTER_CHAIN;
+    public static ServerAfterFilterChain SERVER_AFTER_FILTER_CHAIN;
+
     /**
      * 服务端配置类
      */
@@ -56,4 +60,9 @@ public class CommonServerCache {
      * 请求分发器
      */
     public static ServerChannelDispatcher SERVER_CHANNEL_DISPATCHER = new ServerChannelDispatcher();
+    /**
+     * 用于服务端限流
+     */
+    public static final Map<String, ServerServiceSemaphoreWrapper> SERVER_SERVICE_SEMAPHORE_MAP = new ConcurrentHashMap<>(64);
+
 }
