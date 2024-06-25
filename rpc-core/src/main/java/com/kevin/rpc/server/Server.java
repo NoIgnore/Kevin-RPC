@@ -80,6 +80,10 @@ public class Server {
         }
         SERVER_FILTER_CHAIN = serverFilterChain;
 
+        //初始化请求分发器
+        SERVER_CHANNEL_DISPATCHER.init(SERVER_CONFIG.getServerQueueSize(), SERVER_CONFIG.getServerBizThreadNums());
+        SERVER_CHANNEL_DISPATCHER.startDataConsume();
+
         this.batchExportUrl();
         bootstrap.bind(SERVER_CONFIG.getPort()).sync();
         System.out.println("========== Server start success ==========");
@@ -92,6 +96,8 @@ public class Server {
         serverConfig.setRegisterType("zookeeper");
         serverConfig.setApplicationName("kevin-rpc-server");
         serverConfig.setServerSerialize("kryo");
+        serverConfig.setServerQueueSize(5000);
+        serverConfig.setServerBizThreadNums(12);
         SERVER_CONFIG = serverConfig;
     }
 

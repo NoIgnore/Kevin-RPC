@@ -2,6 +2,7 @@ package com.kevin.rpc.common.cache;
 
 
 import com.kevin.rpc.common.config.ServerConfig;
+import com.kevin.rpc.dispatcher.ServerChannelDispatcher;
 import com.kevin.rpc.filter.server.ServerFilterChain;
 import com.kevin.rpc.registry.RegistryService;
 import com.kevin.rpc.registry.URL;
@@ -50,4 +51,9 @@ public class CommonServerCache {
      * 用于过滤链的Map<ServiceName,服务端包装类>
      */
     public static final Map<String, ServiceWrapper> PROVIDER_SERVICE_WRAPPER_MAP = new ConcurrentHashMap<>();
+
+    /**
+     * 请求分发器
+     */
+    public static ServerChannelDispatcher SERVER_CHANNEL_DISPATCHER = new ServerChannelDispatcher();
 }

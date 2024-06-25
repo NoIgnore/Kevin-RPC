@@ -22,8 +22,8 @@ public class ServerFilterChain {
     }
 
     public void doFilter(RpcInvocation rpcInvocation) {
-        for (ServerFilter iServerFilter : serverFilters) {
-            iServerFilter.doFilter(rpcInvocation);
+        for (ServerFilter serverFilter : serverFilters) {
+            serverFilter.doFilter(rpcInvocation);
         }
     }
 }
