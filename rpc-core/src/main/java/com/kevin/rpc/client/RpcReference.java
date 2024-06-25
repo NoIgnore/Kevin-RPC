@@ -1,5 +1,6 @@
 package com.kevin.rpc.client;
 
+import com.kevin.rpc.common.utils.CommonUtil;
 import com.kevin.rpc.proxy.ProxyFactory;
 
 import static com.kevin.rpc.common.cache.CommonClientCache.CLIENT_CONFIG;
@@ -27,7 +28,7 @@ public class RpcReference {
     }
 
     private void initGlobalRpcReferenceConfig(RpcReferenceWrapper<?> rpcReferenceWrapper) {
-        if (rpcReferenceWrapper.getTimeOut() == null) {
+        if (CommonUtil.isEmpty(rpcReferenceWrapper.getTimeOut())) {
             rpcReferenceWrapper.setTimeOut(CLIENT_CONFIG.getTimeOut());
         }
     }

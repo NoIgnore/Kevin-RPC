@@ -66,6 +66,6 @@ public class RpcReferenceWrapper<T> {
     }
 
     public String getTimeOut() {
-        return (String) (attachments.get("timeOut"));
+        return String.valueOf(attachments.getOrDefault("timeOut", ""));
     }
 }

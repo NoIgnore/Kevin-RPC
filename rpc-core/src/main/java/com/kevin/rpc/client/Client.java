@@ -5,7 +5,7 @@ import com.kevin.rpc.common.RpcDecoder;
 import com.kevin.rpc.common.RpcEncoder;
 import com.kevin.rpc.common.RpcInvocation;
 import com.kevin.rpc.common.RpcProtocol;
-import com.kevin.rpc.common.config.ClientConfig;
+import com.kevin.rpc.common.config.PropertiesBootstrap;
 import com.kevin.rpc.common.event.RpcListenerLoader;
 import com.kevin.rpc.common.utils.CommonUtil;
 import com.kevin.rpc.filter.ClientFilter;
@@ -36,7 +36,6 @@ import java.util.Map;
 
 import static com.kevin.rpc.common.cache.CommonClientCache.*;
 import static com.kevin.rpc.common.constants.RpcConstants.DEFAULT_DECODE_CHAR;
-import static com.kevin.rpc.common.constants.RpcConstants.DEFAULT_TIMEOUT;
 import static com.kevin.rpc.common.utils.CommonUtil.initializeComponent;
 import static com.kevin.rpc.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
@@ -107,16 +106,7 @@ public class Client {
     }
 
     public void initClientConfig() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRegisterAddr("localhost:2181");
-        clientConfig.setRegisterType("zookeeper");
-        clientConfig.setApplicationName("kevin-rpc-client");
-        clientConfig.setProxyType("jdk");
-        clientConfig.setRouterStrategy("random");
-        clientConfig.setClientSerialize("kryo");
-        clientConfig.setTimeOut(DEFAULT_TIMEOUT);
-        clientConfig.setMaxServerRespDataSize(1000);
-        CLIENT_CONFIG = clientConfig;
+        CLIENT_CONFIG = PropertiesBootstrap.loadClientConfigFromLocal();
     }
 
     /**
@@ -232,16 +222,16 @@ public class Client {
         rpcReferenceWrapper1.setTimeOut(CLIENT_CONFIG.getTimeOut());
         DataService dataService = rpcReference.get(rpcReferenceWrapper1);
 
-        //调用远程方法
-        //List<String> list = dataService.getList();
-        //System.out.println(list);
-        //
-        //for (int i = 100; i < 105; ++i) {
-        //    Thread.sleep(1000);
-        //    String msg = i + ":msg from client.";
-        //    String s = dataService.sendData(msg);
-        //    System.out.println(i + ":" + s);
-        //}
+        // 调用远程方法
+        List<String> list = dataService.getList();
+        System.out.println(list);
+
+        for (int i = 100; i < 105; ++i) {
+            Thread.sleep(1000);
+            String msg = i + ":msg from client.";
+            String s = dataService.sendData(msg);
+            System.out.println(i + ":" + s);
+        }
         // dataService.testError();
         // dataService.testErrorV2();
 

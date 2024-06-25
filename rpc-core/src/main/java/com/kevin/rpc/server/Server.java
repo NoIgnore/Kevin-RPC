@@ -4,7 +4,7 @@ import com.kevin.rpc.common.RpcDecoder;
 import com.kevin.rpc.common.RpcEncoder;
 import com.kevin.rpc.common.ServerServiceSemaphoreWrapper;
 import com.kevin.rpc.common.annotations.SPI;
-import com.kevin.rpc.common.config.ServerConfig;
+import com.kevin.rpc.common.config.PropertiesBootstrap;
 import com.kevin.rpc.common.event.RpcListenerLoader;
 import com.kevin.rpc.common.utils.CommonUtil;
 import com.kevin.rpc.filter.ServerFilter;
@@ -103,17 +103,7 @@ public class Server {
     }
 
     public void initServerConfig() {
-        ServerConfig serverConfig = new ServerConfig();
-        serverConfig.setPort(8010);
-        serverConfig.setRegisterAddr("localhost:2181");
-        serverConfig.setRegisterType("zookeeper");
-        serverConfig.setApplicationName("kevin-rpc-server");
-        serverConfig.setServerSerialize("kryo");
-        serverConfig.setServerQueueSize(5000);
-        serverConfig.setServerBizThreadNums(12);
-        serverConfig.setMaxConnections(512);
-        serverConfig.setMaxServerRequestData(1000);
-        SERVER_CONFIG = serverConfig;
+        SERVER_CONFIG = PropertiesBootstrap.loadServerConfigFromLocal();
     }
 
     /**
@@ -160,7 +150,9 @@ public class Server {
         url.addParameter("group", String.valueOf(serviceWrapper.getGroup()));
         url.addParameter("limit", String.valueOf(serviceWrapper.getLimit()));
         PROVIDER_URL_SET.add(url);
-        SERVER_SERVICE_SEMAPHORE_MAP.put(interfaceClass.getName(), new ServerServiceSemaphoreWrapper(serviceWrapper.getLimit()));
+        if (serviceWrapper.getLimit() > 0) {
+            SERVER_SERVICE_SEMAPHORE_MAP.put(interfaceClass.getName(), new ServerServiceSemaphoreWrapper(serviceWrapper.getLimit()));
+        }
         if (CommonUtil.isNotEmpty(serviceWrapper.getServiceToken())) {
             PROVIDER_SERVICE_WRAPPER_MAP.put(interfaceClass.getName(), serviceWrapper);
         }
