@@ -26,7 +26,7 @@ public class DirectInvokeFilterImpl implements ClientFilter {
         // rpcReferenceWrapper1.setServiceToken("token-a");
         // rpcReferenceWrapper1.setUrl("192.168.31.128:8010");
         String url = (String) rpcInvocation.getAttachments().get("url");
-        if (url == null) return;
+        if (CommonUtil.isEmpty(url)) return;
 
         src.removeIf(channelFutureWrapper -> !(channelFutureWrapper.getHost() + ":" + channelFutureWrapper.getPort()).equals(url));
         if (CommonUtil.isEmptyList(src)) {

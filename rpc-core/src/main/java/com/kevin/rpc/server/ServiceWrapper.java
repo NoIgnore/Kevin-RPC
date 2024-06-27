@@ -35,4 +35,10 @@ public class ServiceWrapper {
      * 限流策略
      */
     private Integer limit = -1;
+
+
+    public ServiceWrapper(Object serviceObj, String group) {
+        this.serviceBean = serviceObj;
+        this.group = group;
+    }
 }

@@ -14,14 +14,15 @@ import com.kevin.rpc.registry.AbstractRegister;
 import com.kevin.rpc.registry.RegistryService;
 import com.kevin.rpc.registry.URL;
 import com.kevin.rpc.serialize.SerializeFactory;
-import com.kevin.rpc.server.impl.DataServiceImpl;
-import com.kevin.rpc.server.impl.UserServiceImpl;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import lombok.Data;
 
 import java.io.IOException;
@@ -30,6 +31,7 @@ import java.util.Map;
 
 import static com.kevin.rpc.common.cache.CommonClientCache.EXTENSION_LOADER;
 import static com.kevin.rpc.common.cache.CommonServerCache.*;
+import static com.kevin.rpc.common.constants.RpcConstants.DEFAULT_DECODE_CHAR;
 import static com.kevin.rpc.common.utils.CommonUtil.initializeComponent;
 import static com.kevin.rpc.spi.ExtensionLoader.EXTENSION_LOADER_CLASS_CACHE;
 
@@ -58,6 +60,8 @@ public class Server {
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) {
+                ByteBuf delimiter = Unpooled.copiedBuffer(DEFAULT_DECODE_CHAR.getBytes());
+                ch.pipeline().addLast(new DelimiterBasedFrameDecoder(SERVER_CONFIG.getMaxServerRequestData(), delimiter));
                 ch.pipeline().addLast(new RpcEncoder());
                 ch.pipeline().addLast(new RpcDecoder());
                 ch.pipeline().addLast(new ServerHandler());
@@ -99,7 +103,7 @@ public class Server {
 
         this.batchExportUrl();
         bootstrap.bind(SERVER_CONFIG.getPort()).sync();
-        System.out.println("========== Server start success ==========");
+        //System.out.println("========== Server start success ==========");
     }
 
     public void initServerConfig() {
@@ -158,26 +162,26 @@ public class Server {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        Server server = new Server();
-        //初始化配置
-        server.initServerConfig();
-
-        //注册服务
-        ServiceWrapper serviceWrapper1 = new ServiceWrapper(new DataServiceImpl());
-        serviceWrapper1.setGroup("dev");
-        serviceWrapper1.setServiceToken("token-a");
-        serviceWrapper1.setLimit(2);
-        server.registryService(serviceWrapper1);
-
-        ServiceWrapper serviceWrapper2 = new ServiceWrapper(new UserServiceImpl());
-        serviceWrapper2.setGroup("test");
-        serviceWrapper2.setServiceToken("token-b");
-        // serviceWrapper2.setLimit(4);
-        server.registryService(serviceWrapper2);
-        //设置回调
-        ServerShutdownHook.registryShutdownHook();
-        //启动服务
-        server.startServerApplication();
-    }
+    //public static void main(String[] args) throws InterruptedException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    //    Server server = new Server();
+    //    //初始化配置
+    //    server.initServerConfig();
+    //
+    //    //注册服务
+    //    ServiceWrapper serviceWrapper1 = new ServiceWrapper(new DataServiceImpl());
+    //    serviceWrapper1.setGroup("dev");
+    //    serviceWrapper1.setServiceToken("token-a");
+    //    serviceWrapper1.setLimit(2);
+    //    server.registryService(serviceWrapper1);
+    //
+    //    ServiceWrapper serviceWrapper2 = new ServiceWrapper(new UserServiceImpl());
+    //    serviceWrapper2.setGroup("test");
+    //    serviceWrapper2.setServiceToken("token-b");
+    //    // serviceWrapper2.setLimit(4);
+    //    server.registryService(serviceWrapper2);
+    //    //设置回调
+    //    ServerShutdownHook.registryShutdownHook();
+    //    //启动服务
+    //    server.startServerApplication();
+    //}
 }

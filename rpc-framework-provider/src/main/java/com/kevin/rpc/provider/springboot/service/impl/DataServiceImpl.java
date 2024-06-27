@@ -1,10 +1,12 @@
-package com.kevin.rpc.server.impl;
+package com.kevin.rpc.provider.springboot.service.impl;
 
 import com.kevin.rpc.interfaces.DataService;
+import com.kevin.rpc.spring.starter.common.EasyRpcService;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@EasyRpcService(serviceToken = "data-token", group = "data-group", limit = 2)
 public class DataServiceImpl implements DataService {
 
     @Override
@@ -16,9 +18,9 @@ public class DataServiceImpl implements DataService {
     @Override
     public List<String> getList() {
         ArrayList<String> arrayList = new ArrayList<>();
-        arrayList.add("服务端实现的 DataServiceImpl:getList() : List[0]");
-        arrayList.add("服务端实现的 DataServiceImpl:getList() : List[1]");
-        arrayList.add("服务端实现的 DataServiceImpl:getList() : List[2]");
+        arrayList.add("rpc.provider.springboot.service.impl 实现的 DataServiceImpl:getList() : List[0]");
+        arrayList.add("rpc.provider.springboot.service.impl 实现的 DataServiceImpl:getList() : List[1]");
+        arrayList.add("rpc.provider.springboot.service.impl 实现的 DataServiceImpl:getList() : List[2]");
         return arrayList;
     }
 
