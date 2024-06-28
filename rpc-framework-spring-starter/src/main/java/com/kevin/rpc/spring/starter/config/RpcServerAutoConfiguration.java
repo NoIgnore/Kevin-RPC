@@ -48,7 +48,7 @@ public class RpcServerAutoConfiguration implements InitializingBean, Application
             dataServiceServiceWrapper.setWeight(kevinRpcService.weight());
             dataServiceServiceWrapper.setLimit(kevinRpcService.limit());
             server.registryService(dataServiceServiceWrapper);
-            LOGGER.info(">>>>>>>>>>>>>>> [easy-rpc] {} export success! >>>>>>>>>>>>>>> ", beanName);
+            LOGGER.info(">>>>>>>>>>>>>>> [kevin-rpc] {} export success! >>>>>>>>>>>>>>> ", beanName);
         }
         ServerShutdownHook.registryShutdownHook();
         server.startServerApplication();
@@ -64,9 +64,8 @@ public class RpcServerAutoConfiguration implements InitializingBean, Application
     private void printBanner() {
         System.out.println();
         System.out.println("==============================================");
-        System.out.println("|||---------- Easy Rpc Starting Now! ----------|||");
+        System.out.println("|||---------- kevin Rpc Starting Now! ----------|||");
         System.out.println("==============================================");
-        System.out.println("version: 1.0.0");
         System.out.println();
     }
 }
