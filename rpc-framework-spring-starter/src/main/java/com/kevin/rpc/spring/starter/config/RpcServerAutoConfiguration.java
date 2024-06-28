@@ -3,7 +3,7 @@ package com.kevin.rpc.spring.starter.config;
 import com.kevin.rpc.server.Server;
 import com.kevin.rpc.server.ServerShutdownHook;
 import com.kevin.rpc.server.ServiceWrapper;
-import com.kevin.rpc.spring.starter.common.EasyRpcService;
+import com.kevin.rpc.spring.starter.common.KevinRpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -31,7 +31,7 @@ public class RpcServerAutoConfiguration implements InitializingBean, Application
     @Override
     public void afterPropertiesSet() throws Exception {
         Server server = null;
-        Map<String, Object> beanMap = applicationContext.getBeansWithAnnotation(EasyRpcService.class);
+        Map<String, Object> beanMap = applicationContext.getBeansWithAnnotation(KevinRpcService.class);
         if (beanMap.size() == 0) {
             //说明当前应用内部不需要对外暴露服务
             return;
@@ -42,11 +42,11 @@ public class RpcServerAutoConfiguration implements InitializingBean, Application
         server.initServerConfig();
         for (String beanName : beanMap.keySet()) {
             Object bean = beanMap.get(beanName);
-            EasyRpcService easyRpcService = bean.getClass().getAnnotation(EasyRpcService.class);
-            ServiceWrapper dataServiceServiceWrapper = new ServiceWrapper(bean, easyRpcService.group());
-            dataServiceServiceWrapper.setServiceToken(easyRpcService.serviceToken());
-            dataServiceServiceWrapper.setWeight(easyRpcService.weight());
-            dataServiceServiceWrapper.setLimit(easyRpcService.limit());
+            KevinRpcService kevinRpcService = bean.getClass().getAnnotation(KevinRpcService.class);
+            ServiceWrapper dataServiceServiceWrapper = new ServiceWrapper(bean, kevinRpcService.group());
+            dataServiceServiceWrapper.setServiceToken(kevinRpcService.serviceToken());
+            dataServiceServiceWrapper.setWeight(kevinRpcService.weight());
+            dataServiceServiceWrapper.setLimit(kevinRpcService.limit());
             server.registryService(dataServiceServiceWrapper);
             LOGGER.info(">>>>>>>>>>>>>>> [easy-rpc] {} export success! >>>>>>>>>>>>>>> ", beanName);
         }

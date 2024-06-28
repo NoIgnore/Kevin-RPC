@@ -8,7 +8,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Component
-public @interface EasyRpcService {
+public @interface KevinRpcService {
     //限流
     int limit() default 0;
 

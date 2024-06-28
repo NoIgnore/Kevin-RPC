@@ -3,7 +3,7 @@ package com.kevin.rpc.spring.starter.config;
 import com.kevin.rpc.client.Client;
 import com.kevin.rpc.client.RpcReference;
 import com.kevin.rpc.client.RpcReferenceWrapper;
-import com.kevin.rpc.spring.starter.common.EasyRpcReference;
+import com.kevin.rpc.spring.starter.common.KevinRpcReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -38,17 +38,17 @@ public class RpcClientAutoConfiguration implements BeanPostProcessor, Applicatio
         // beanName 通常是类名的首字母小写形式，例如 "userController"
         Field[] fields = bean.getClass().getDeclaredFields();
         for (Field field : fields) {
-            //@EasyRpcReference
+            //@KevinRpcReference
             //private UserService userService;
             //
             ///**
             // * 验证各类参数配置是否异常
             // */
-            //@EasyRpcReference(group = "data-group", serviceToken = "data-token")
+            //@KevinRpcReference(group = "data-group", serviceToken = "data-token")
             //private DataService dataService;
             //这里的field有userService和dataService
 
-            if (field.isAnnotationPresent(EasyRpcReference.class)) {
+            if (field.isAnnotationPresent(KevinRpcReference.class)) {
                 if (!hasInitClientConfig) {
                     client = new Client();
                     try {
@@ -61,19 +61,19 @@ public class RpcClientAutoConfiguration implements BeanPostProcessor, Applicatio
                     hasInitClientConfig = true;
                 }
                 needInitClient = true;
-                EasyRpcReference easyRpcReference = field.getAnnotation(EasyRpcReference.class);
+                KevinRpcReference kevinRpcReference = field.getAnnotation(KevinRpcReference.class);
                 try {
                     field.setAccessible(true);
                     Object refObj = field.get(bean);
                     RpcReferenceWrapper rpcReferenceWrapper = new RpcReferenceWrapper();
                     rpcReferenceWrapper.setAimClass(field.getType());
-                    rpcReferenceWrapper.setGroup(easyRpcReference.group());
-                    rpcReferenceWrapper.setServiceToken(easyRpcReference.serviceToken());
-                    rpcReferenceWrapper.setUrl(easyRpcReference.url());
-                    rpcReferenceWrapper.setTimeOut(easyRpcReference.timeOut());
+                    rpcReferenceWrapper.setGroup(kevinRpcReference.group());
+                    rpcReferenceWrapper.setServiceToken(kevinRpcReference.serviceToken());
+                    rpcReferenceWrapper.setUrl(kevinRpcReference.url());
+                    rpcReferenceWrapper.setTimeOut(kevinRpcReference.timeOut());
                     //失败重试次数
-                    rpcReferenceWrapper.setRetry(easyRpcReference.retry());
-                    rpcReferenceWrapper.setAsync(easyRpcReference.async());
+                    rpcReferenceWrapper.setRetry(kevinRpcReference.retry());
+                    rpcReferenceWrapper.setAsync(kevinRpcReference.async());
                     refObj = rpcReference.get(rpcReferenceWrapper);
                     field.set(bean, refObj);
                     //使用 field.set(bean, refObj) 将代理对象注入到 UserController 实例的对应字段中

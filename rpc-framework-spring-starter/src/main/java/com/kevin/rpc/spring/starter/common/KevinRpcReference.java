@@ -6,7 +6,7 @@ import java.lang.annotation.*;
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface EasyRpcReference {
+public @interface KevinRpcReference {
     //直连url
     String url() default "";
 

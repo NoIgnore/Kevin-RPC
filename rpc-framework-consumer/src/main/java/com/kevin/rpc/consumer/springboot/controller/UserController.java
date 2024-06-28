@@ -2,7 +2,7 @@ package com.kevin.rpc.consumer.springboot.controller;
 
 import com.kevin.rpc.interfaces.DataService;
 import com.kevin.rpc.interfaces.UserService;
-import com.kevin.rpc.spring.starter.common.EasyRpcReference;
+import com.kevin.rpc.spring.starter.common.KevinRpcReference;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,13 +21,13 @@ import java.util.List;
 @RequestMapping(value = "/user")
 public class UserController {
 
-    @EasyRpcReference
+    @KevinRpcReference
     private UserService userService;
 
     /**
      * 验证各类参数配置是否异常
      */
-    @EasyRpcReference(group = "data-group", serviceToken = "data-token")
+    @KevinRpcReference(group = "data-group", serviceToken = "data-token")
     private DataService dataService;
 
     @GetMapping(value = "/test")

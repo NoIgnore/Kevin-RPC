@@ -1,12 +1,12 @@
 package com.kevin.rpc.provider.springboot.service.impl;
 
 import com.kevin.rpc.interfaces.DataService;
-import com.kevin.rpc.spring.starter.common.EasyRpcService;
+import com.kevin.rpc.spring.starter.common.KevinRpcService;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@EasyRpcService(serviceToken = "data-token", group = "data-group", limit = 2)
+@KevinRpcService(serviceToken = "data-token", group = "data-group", limit = 2)
 public class DataServiceImpl implements DataService {
 
     @Override
