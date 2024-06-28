@@ -12,6 +12,9 @@ public @interface EasyRpcService {
     //限流
     int limit() default 0;
 
+    //服务权重[100的倍数] (该参数和路由策略有关，只有随机策略才会使用)
+    int weight() default 100;
+
     //服务分组
     String group() default "default";
 

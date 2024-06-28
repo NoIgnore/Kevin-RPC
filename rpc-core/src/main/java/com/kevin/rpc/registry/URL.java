@@ -45,8 +45,7 @@ public class URL {
 
     /**
      * 将URL转换为写入zk的provider节点下的一段字符串
-     * kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100;group
-     * 这里的100是权重值
+     * kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;权重;group
      *
      * @param url
      * @return
@@ -55,7 +54,8 @@ public class URL {
         String host = url.getParameters().get("host");
         String port = url.getParameters().get("port");
         String group = url.getParameters().get("group");
-        return new String((url.getApplicationName() + ";" + url.getServiceName() + ";" + host + ":" + port + ";" + System.currentTimeMillis() + ";100;" + group).getBytes(), StandardCharsets.UTF_8);
+        String weight = url.getParameters().get("weight");
+        return new String((url.getApplicationName() + ";" + url.getServiceName() + ";" + host + ":" + port + ";" + System.currentTimeMillis() + ";" + weight + ";" + group).getBytes(), StandardCharsets.UTF_8);
     }
 
     /**
@@ -73,7 +73,7 @@ public class URL {
 
     /**
      * 将某个节点下的信息转换为一个Provider节点对象
-     * 实际入参: kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100(权重);default
+     * 实际入参: 应用名;com.kevin.rpc.interfaces.服务名;服务端IP:服务端端口;当前时间;权重;group
      *
      * @param providerNodeStr
      * @return

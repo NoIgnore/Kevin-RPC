@@ -36,6 +36,10 @@ public class ServiceWrapper {
      */
     private Integer limit = -1;
 
+    /**
+     * 服务权重
+     */
+    private Integer weight = 100;
 
     public ServiceWrapper(Object serviceObj, String group) {
         this.serviceBean = serviceObj;

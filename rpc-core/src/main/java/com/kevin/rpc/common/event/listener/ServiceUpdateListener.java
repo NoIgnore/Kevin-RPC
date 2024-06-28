@@ -3,8 +3,9 @@ package com.kevin.rpc.common.event.listener;
 import com.kevin.rpc.client.ConnectionHandler;
 import com.kevin.rpc.common.ChannelFutureWrapper;
 import com.kevin.rpc.common.event.RpcUpdateEvent;
+import com.kevin.rpc.common.event.data.ProviderNodeInfo;
 import com.kevin.rpc.common.event.data.URLChangeWrapper;
-import com.kevin.rpc.common.utils.CommonUtil;
+import com.kevin.rpc.registry.URL;
 import com.kevin.rpc.router.Selector;
 import io.netty.channel.ChannelFuture;
 import org.slf4j.Logger;
@@ -29,14 +30,22 @@ public class ServiceUpdateListener implements RpcListener<RpcUpdateEvent> {
 
     @Override
     public void callBack(Object t) {
+        //com/kevin/rpc/registry/zookeeper/ZookeeperRegister.java:137
+        //public void watchChildNodeData(String newServerNodePath) {
+        // ......
+        //        URLChangeWrapper urlChangeWrapper = new URLChangeWrapper();
+        //        urlChangeWrapper.setNodeDataUrl(nodeDetailInfoMap);
+        //        urlChangeWrapper.setProviderUrl(childrenDataList);
+        //        urlChangeWrapper.setServiceName(path.split("/")[2]);
+        //        RpcEvent rpcEvent = new RpcUpdateEvent(urlChangeWrapper);
+        //        RpcListenerLoader.sendEvent(rpcEvent);
+        //......
+        //}
         //获取到字节点的数据信息
         URLChangeWrapper urlChangeWrapper = (URLChangeWrapper) t;
         List<ChannelFutureWrapper> channelFutureWrappers = CONNECT_MAP.get(urlChangeWrapper.getServiceName());
-        if (CommonUtil.isEmptyList(channelFutureWrappers)) {
-            LOGGER.error("[ServiceUpdateListener] channelFutureWrappers is empty");
-            return;
-        }
 
+        // “服务端IP:服务端端口” 的List
         List<String> matchProviderUrl = urlChangeWrapper.getProviderUrl();
 
         Set<String> finalUrl = new HashSet<>();
@@ -62,9 +71,14 @@ public class ServiceUpdateListener implements RpcListener<RpcUpdateEvent> {
                 Integer port = Integer.valueOf(newProviderUrl.split(":")[1]);
                 channelFutureWrapper.setPort(port);
                 channelFutureWrapper.setHost(host);
+                String urlStr = urlChangeWrapper.getNodeDataUrl().get(newProviderUrl);
+                ProviderNodeInfo providerNodeInfo = URL.buildUrlFromUrlStr(urlStr);
+                channelFutureWrapper.setWeight(providerNodeInfo.getWeight());
+                channelFutureWrapper.setGroup(providerNodeInfo.getGroup());
                 ChannelFuture channelFuture = null;
                 try {
                     channelFuture = ConnectionHandler.createChannelFuture(host, port);
+                    LOGGER.debug("channelFuture reconnect,server is {}:{}", host, port);
                     channelFutureWrapper.setChannelFuture(channelFuture);
                     newChannelFutureWrapper.add(channelFutureWrapper);
                     finalUrl.add(newProviderUrl);

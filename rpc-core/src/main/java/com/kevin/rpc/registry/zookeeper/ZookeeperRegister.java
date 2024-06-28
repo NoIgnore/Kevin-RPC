@@ -8,9 +8,12 @@ import com.kevin.rpc.common.event.RpcNodeUpdateEvent;
 import com.kevin.rpc.common.event.RpcUpdateEvent;
 import com.kevin.rpc.common.event.data.ProviderNodeInfo;
 import com.kevin.rpc.common.event.data.URLChangeWrapper;
+import com.kevin.rpc.common.utils.CommonUtil;
 import com.kevin.rpc.registry.AbstractRegister;
 import com.kevin.rpc.registry.RegistryService;
 import com.kevin.rpc.registry.URL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +23,8 @@ import static com.kevin.rpc.common.cache.CommonClientCache.CLIENT_CONFIG;
 import static com.kevin.rpc.common.cache.CommonServerCache.SERVER_CONFIG;
 
 public class ZookeeperRegister extends AbstractRegister implements RegistryService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZookeeperRegister.class);
 
     private final AbstractZookeeperClient zkClient;
 
@@ -131,11 +136,19 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
 
     public void watchChildNodeData(String newServerNodePath) {
         zkClient.watchChildNodeData(newServerNodePath, watchedEvent -> {
-            System.out.println("watchChildNodeData:" + watchedEvent);
             // /kevin-rpc/com.kevin.rpc.interfaces.DataService/provider
             String path = watchedEvent.getPath();
+            LOGGER.info("[watchChildNodeData] 监听到zk节点下的{}节点数据发生变更", path);
             List<String> childrenDataList = zkClient.getChildrenData(path);
+            //List<String> childrenDataList -> “服务端IP:服务端端口” 的List
             URLChangeWrapper urlChangeWrapper = new URLChangeWrapper();
+            Map<String, String> nodeDetailInfoMap = new HashMap<>();
+            for (String providerAddress : childrenDataList) {
+                String nodeDetailInfo = zkClient.getNodeData(path + "/" + providerAddress);
+                // nodeDetailInfo-> 应用名;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;权重;group
+                nodeDetailInfoMap.put(providerAddress, nodeDetailInfo);
+            }
+            urlChangeWrapper.setNodeDataUrl(nodeDetailInfoMap);
             urlChangeWrapper.setProviderUrl(childrenDataList);
             // setServiceName：com.kevin.rpc.interfaces.DataService
             urlChangeWrapper.setServiceName(path.split("/")[2]);
@@ -151,15 +164,17 @@ public class ZookeeperRegister extends AbstractRegister implements RegistryServi
      */
     public void watchNodeDataChange(String newServerNodePath) {
         zkClient.watchNodeData(newServerNodePath, watchedEvent -> {
-            System.out.println("watchNodeDataChange:" + watchedEvent);
             String path = watchedEvent.getPath();
+            LOGGER.info("[watchNodeDataChange]收到子节点{}数据变化", path);
             String nodeData = zkClient.getNodeData(path);
-            //kevin-rpc-server;com.kevin.rpc.interfaces.DataService;服务端IP:服务端端口;当前时间;100
-            //变成-> kevin-rpc-server/com.kevin.rpc.interfaces.DataService/服务端IP:服务端端口/当前时间/100
-            //nodeData = nodeData.replace(";", "/");
-            ProviderNodeInfo providerNodeInfo = URL.buildUrlFromUrlStr(nodeData);
-            RpcEvent rpcEvent = new RpcNodeUpdateEvent(providerNodeInfo);
-            RpcListenerLoader.sendEvent(rpcEvent);
+            //nodeData -> 应用名;com.kevin.rpc.interfaces.服务名;服务端IP:服务端端口;当前时间;权重;group
+            if (CommonUtil.isEmpty(nodeData)) {
+                LOGGER.error("{} node data is null", path);
+            } else {
+                ProviderNodeInfo providerNodeInfo = URL.buildUrlFromUrlStr(nodeData);
+                RpcEvent rpcEvent = new RpcNodeUpdateEvent(providerNodeInfo);
+                RpcListenerLoader.sendEvent(rpcEvent);
+            }
             watchNodeDataChange(newServerNodePath);
         });
     }

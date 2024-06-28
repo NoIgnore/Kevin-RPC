@@ -60,6 +60,8 @@ public class RpcInvocation implements Serializable {
                 ", args=" + Arrays.toString(args) +
                 ", uuid='" + uuid + '\'' +
                 ", response=" + response +
+                ", e=" + e +
+                ", retry=" + retry +
                 '}';
     }
 }
