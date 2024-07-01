@@ -15,7 +15,7 @@ import java.util.List;
  **/
 public class ServerBeforeFilterChain {
 
-    private static List<ServerFilter> serverFilters = new ArrayList<>();
+    private static final List<ServerFilter> serverFilters = new ArrayList<>();
 
     public void addServerFilter(ServerFilter iServerFilter) {
         serverFilters.add(iServerFilter);

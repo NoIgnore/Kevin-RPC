@@ -19,7 +19,7 @@ public class PropertiesLoader {
 
     private static Properties properties;
 
-    private static Map<String, String> propertiesMap = new HashMap<>();
+    private static final Map<String, String> propertiesMap = new HashMap<>();
 
     private static final String DEFAULT_PROPERTIES_FILE = "rpc.properties";
 

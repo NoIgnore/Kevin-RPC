@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ProxyGenerator {
     private static final AtomicInteger COUNTER = new AtomicInteger(1);
 
-    private static ConcurrentHashMap<Class<?>, Object> proxyInstanceCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Class<?>, Object> proxyInstanceCache = new ConcurrentHashMap<>();
 
     public static Object newProxyInstance(ClassLoader classLoader, Class<?> targetClass, InvocationHandler invocationHandler)
             throws Exception {
@@ -92,7 +92,7 @@ public class ProxyGenerator {
                     sb.append(getParameterType(ets[i]));
                 }
             }
-            sb.append('{').append(code.toString()).append('}');
+            sb.append('{').append(code).append('}');
 
             CtMethod ctMethod = CtMethod.make(sb.toString(), proxy);
             proxy.addMethod(ctMethod);
@@ -140,7 +140,7 @@ public class ProxyGenerator {
                 c = c.getComponentType();
             } while (c.isArray());
 
-            return c.getName() + sb.toString();
+            return c.getName() + sb;
         }
         return c.getName();
     }

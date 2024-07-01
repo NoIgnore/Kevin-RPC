@@ -10,7 +10,6 @@ import com.kevin.rpc.common.utils.CommonUtil;
 import com.kevin.rpc.filter.ServerFilter;
 import com.kevin.rpc.filter.server.ServerAfterFilterChain;
 import com.kevin.rpc.filter.server.ServerBeforeFilterChain;
-import com.kevin.rpc.registry.AbstractRegister;
 import com.kevin.rpc.registry.RegistryService;
 import com.kevin.rpc.registry.URL;
 import com.kevin.rpc.serialize.SerializeFactory;
@@ -86,7 +85,7 @@ public class Server {
             if (filterChainImpl == null) {
                 throw new RuntimeException("no match filterChainImpl for " + filterChainKey);
             }
-            SPI spi = (SPI) filterChainImpl.getDeclaredAnnotation(SPI.class);
+            SPI spi = filterChainImpl.getDeclaredAnnotation(SPI.class);
             if (spi != null && "before".equalsIgnoreCase(spi.value())) {
                 serverBeforeFilterChain.addServerFilter((ServerFilter) filterChainImpl.newInstance());
             } else if (spi != null && "after".equalsIgnoreCase(spi.value())) {
@@ -138,7 +137,7 @@ public class Server {
         }
         if (REGISTRY_SERVICE == null) {
             try {
-                REGISTRY_SERVICE = (AbstractRegister) initializeComponent(RegistryService.class, SERVER_CONFIG.getRegisterType());
+                REGISTRY_SERVICE = initializeComponent(RegistryService.class, SERVER_CONFIG.getRegisterType());
             } catch (Exception e) {
                 throw new RuntimeException("registryServiceType unKnow,error is ", e);
             }

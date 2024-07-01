@@ -24,7 +24,7 @@ public class RpcListenerLoader {
 
     private static final List<RpcListener<?>> rpcListenerList = new ArrayList<>();
 
-    private static ExecutorService eventThreadPool = Executors.newFixedThreadPool(2);
+    private static final ExecutorService eventThreadPool = Executors.newFixedThreadPool(2);
 
     public static void registerListener(RpcListener<?> rpcListener) {
         rpcListenerList.add(rpcListener);

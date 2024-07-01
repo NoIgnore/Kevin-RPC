@@ -16,7 +16,7 @@ import java.util.List;
  **/
 public class ClientFilterChain {
 
-    private static List<ClientFilter> clientFilterList = new ArrayList<>();
+    private static final List<ClientFilter> clientFilterList = new ArrayList<>();
 
     public void addClientFilter(ClientFilter iClientFilter) {
         clientFilterList.add(iClientFilter);

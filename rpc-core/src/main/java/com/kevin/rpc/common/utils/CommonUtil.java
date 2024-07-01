@@ -33,7 +33,7 @@ public class CommonUtil {
             Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
             InetAddress ip = null;
             while (allNetInterfaces.hasMoreElements()) {
-                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement();
+                NetworkInterface netInterface = allNetInterfaces.nextElement();
                 if (!netInterface.isLoopback() && !netInterface.isVirtual() && netInterface.isUp()) {
                     Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
                     while (addresses.hasMoreElements()) {
@@ -43,7 +43,7 @@ public class CommonUtil {
                 }
             }
         } catch (Exception e) {
-            System.err.println("IP地址获取失败" + e.toString());
+            System.err.println("IP地址获取失败" + e);
         }
         return "";
     }
